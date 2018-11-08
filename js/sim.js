@@ -1,23 +1,24 @@
-var rysuje = 0;
-			var K = 0;
+			var rysuje = 0;
+			var K = 0.12;
 			let width = 800;
 			let height = 500;
 			let N = 800;
 			let h = 1.054e-34;
 			let mass = 9.1e-31;
-			let deltax = 0.05e-9
-			let dt = 0.5e-17;
-			let dx = deltax * 20* 1e9;
-			let sigma =25;
-			let nc = 240;
+			let deltax = 0.1e-9;
+			let dt = 2e-17;
+			let dx = deltax * 1e9;
+			let sigma = 25;
+			let nc = 340;
 			var pTotal = 0;
 			let PI = 3.14159;
-			var x1 = 100;
-			var x2 = 200;
+			var x1 = 390;
+			var x2 = 400;
 			var multiplier = 4000;
-			var y = 2.6;
+			var y = 10;
+			var time = 0;
 			
-			let ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
+			var ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
 			var positions = new Float32Array( N * 3 ); // 3 vertices per point
 			var positions2 = new Float32Array( N * 3 ); // 3 vertices per point
 			var V = [];
@@ -27,6 +28,7 @@ var rysuje = 0;
 			var pos = [];
 			
 			setup();
+			document.getElementById("sim_display_ra").innerHTML="ra " + ra.toFixed(3); 
 
 			var scene = new THREE.Scene();
 
@@ -35,8 +37,8 @@ var rysuje = 0;
 			var renderer = new THREE.WebGLRenderer({  antialias: true});
 			renderer.setSize( width, height );
 			var theDiv = document.getElementById("canvas");
+			
 			theDiv.appendChild( renderer.domElement );
-
 			
 			var geometry = new THREE.BufferGeometry();
 
@@ -51,13 +53,7 @@ var rysuje = 0;
 			geometry2.setDrawRange( 0, drawCount );
 
 			// material
-			var material = new THREE.LineDashedMaterial( {
-				color: 0xffffff,
-				linewidth: 2,
-				scale: 1,
-				dashSize: 2,
-				gapSize: 1,
-			} );
+			var material = new THREE.LineBasicMaterial( { color:  0xffffff, linewidth: 2 } );
 			// material
 			var material2 = new THREE.LineBasicMaterial( { color: 0xaa00fd, linewidth: 2 } );
 
@@ -82,6 +78,10 @@ var rysuje = 0;
 				line2.geometry.attributes.position.needsUpdate = true; 
 				renderer.render( scene, camera );
 				var t1 = performance.now();
+				console.log(1/((t1-t0)));
+				time += dt;
+				
+				document.getElementById("sim_display_time").innerHTML="Time elapsed: " + (time * 1e15).toFixed(0) + "fs"; 
 				
 			};
 
@@ -122,13 +122,13 @@ var rysuje = 0;
 				for(var i =1; i< N - 1; i++){
 					imag[i] += ra * (real[i - 1] - 2 * real[i] + real[i + 1]) - (dt/h) * V[i] * real[i];
 				}
+				
 				for(var i =1; i< N - 1; i++){
 				
-				//console.log(i + "->" + imag[i])
 					positions[ index ++ ] = - width / 2 + i;
 					positions[ index ++ ] = 4e+19*V[i];
 					positions[ index ++ ] = 0;
-					
+						
 					positions2[ index2 ++ ] = - width / 2 + i;
 					if(rysuje == 0){
 						positions2[ index2 ++ ] = multiplier*(imag[i]*imag[i] + real[i]*real[i]);
@@ -140,23 +140,20 @@ var rysuje = 0;
 						line2.material.color.setHex( 0x45e506 );
 						positions2[ index2 ++ ] = multiplier*(real[i]);
 					}
-					positions2[ index2 ++ ] = 0;
-					
+					positions2[ index2 ++ ] = 0;	
 					
 				}
-				
-				
 
 			}
 			
 			function setup(){
 			
 				resetPotential();
-				
+				time = 0;
 				for(var i = 1; i < N-1; i++){
-					real[i] = Math.exp(-1.0 * Math.pow(((i - nc) / (Math.sqrt(2)*sigma)), 2)) * Math.cos(K* (i - nc) ) ;
-					imag[i] = Math.exp(-1.0 * Math.pow(((i - nc) / (Math.sqrt(2)*sigma)), 2)) * Math.sin(K*(i - nc) );
-					pos[i] = dx * i;
+					real[i] = Math.exp(-1.0 * Math.pow(((i - nc) / (sigma*Math.sqrt(2))), 2)) * Math.cos(K* (i - nc) ) ;
+					imag[i] = Math.exp(-1.0 * Math.pow(((i - nc) / (sigma*Math.sqrt(2))), 2)) * Math.sin(K*(i - nc) );
+					//pos[i] = dx * i;
 					pTotal = pTotal + Math.pow(imag[i],2) + Math.pow(real[i],2);
 				}
 				
@@ -184,7 +181,7 @@ var rysuje = 0;
 				}
 					
 				for(var i = x1; i < x2; i++){
-					V[i] = y*1e-18;
+					V[i] = y*1e-19;
 				}
 			
 			}
