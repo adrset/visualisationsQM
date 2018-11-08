@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>Schrödinger FTDT</title>
+		<style>
+			body { margin: 0; }
+			#canvas { width: 800px; height: 500px; display: inline-block; }
+			#options {width: 400px; height:800px; background :gray; position:fixed; top:0px; right:0px;}
+		
+			/* The slider itself */
+			.sim_slider {
+				-webkit-appearance: none;  /* Override default CSS styles */
+				appearance: none;
+				width: 90%;
+				margin-left:5%;
+				height: 20px; /* Specified height */
+				background: lightblue;
+				outline: none;
+				opacity: 0.7; 
+				-webkit-transition: .2s;
+				transition: opacity .2s;
+			}
+
+			.sim_slider:hover {
+				opacity: 1; /* Fully shown on mouse-over */
+			}
+
+			.sim_slider::-webkit-slider-thumb {
+				-webkit-appearance: none; /* Override default look */
+				appearance: none;
+				width: 25px; /* Set a specific slider handle width */
+				height: 25px; /* Slider handle height */
+				background: #4CAF50; /* Green background */
+				cursor: pointer; /* Cursor on hover */
+			}
+
+			.sim_slider::-moz-range-thumb {
+				width: 25px; /* Set a specific slider handle width */
+				height: 25px; /* Slider handle height */
+				background: #4CAF50; /* Green background */
+				cursor: pointer; /* Cursor on hover */
+			}
+			
+			.sim_options_label{
+				color:white;
+				display:block;
+				text-align:center;
+				margin: 0 auto;
+			}
+			
+			.sim_options_button{
+				width: 100px;
+				height: 40px;
+				outline: none;
+				background: #4CAF50;
+				opacity: 0.7;
+				border: none;
+				text-color: white;
+				display:block;
+				margin: 0 auto;
+			}
+			
+			.sim_options_button:hover{
+				cursor: pointer;
+				opacity: 1;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="canvas"><div id="sim_canvas_text"></div></div>
+		<div id="options"><span class="sim_options_label">K - momentum</span><input type="range" min="-2" max="2" value="0.0" step="0.01" id="slider" class="sim_slider" />
+		<span class="sim_options_label">Gauss offset</span><input type="range" min="100" max="400" value="240" step="0.2" id="slider_nc" class="sim_slider" />
+		<span class="sim_options_label">σ</span><input type="range" min="1" max="100" value="25" step="0.2" id="slider_sigma" class="sim_slider" />
+		<span class="sim_options_label">Potential barier start</span><input type="range" min="1" max="800" value="100" step="1" id="slider_x1" class="sim_slider" />
+		<span class="sim_options_label">Potential barier end</span><input type="range" min="1" max="800" value="200" step="1" id="slider_x2" class="sim_slider" />
+		<span class="sim_options_label">Potential barier height</span><input type="range" min="1" max="5" value="2.6" step="0.1" id="slider_y" class="sim_slider" />
+		<span class="sim_options_label">Mode</span><input type="range" min="0" max="2" value="0" step="1" id="slider_rys" class="sim_slider" /><br>
+		<button type="button" id="reset" class="sim_options_button">Restart!</button>
+		
+		</div>
+		<script src="js/three.js"></script>
+		<script src="js/misc.js"></script>
+		<script src="js/sim.js"></script>
+	</body>
+</html>
