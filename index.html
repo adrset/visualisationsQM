@@ -1,87 +1,96 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset=utf-8>
-		<title>Schrödinger FTDT</title>
-		<style>
-			body { margin: 0; }
-			#canvas { width: 800px; height: 500px; display: inline-block; }
-			#options {width: 400px; height:800px; background :gray; position:fixed; top:0px; right:0px;}
+
+<head>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="js/three.js"></script>
+
+    <meta charset=utf-8>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <title>Schrödinger FTDT</title>
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+</head>
+
+<body>
+
+    <div id="nav" class='menu'>
+        <span class="nav_title" ">Quantum Mechanics</span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div></div>
 		
-			/* The slider itself */
-			.sim_slider {
-				-webkit-appearance: none;  /* Override default CSS styles */
-				appearance: none;
-				width: 90%;
-				margin-left:5%;
-				height: 20px; /* Specified height */
-				background: lightblue;
-				outline: none;
-				opacity: 0.7; 
-				-webkit-transition: .2s;
-				transition: opacity .2s;
-			}
-
-			.sim_slider:hover {
-				opacity: 1; /* Fully shown on mouse-over */
-			}
-
-			.sim_slider::-webkit-slider-thumb {
-				-webkit-appearance: none; /* Override default look */
-				appearance: none;
-				width: 25px; /* Set a specific slider handle width */
-				height: 25px; /* Slider handle height */
-				background: #4CAF50; /* Green background */
-				cursor: pointer; /* Cursor on hover */
-			}
-
-			.sim_slider::-moz-range-thumb {
-				width: 25px; /* Set a specific slider handle width */
-				height: 25px; /* Slider handle height */
-				background: #4CAF50; /* Green background */
-				cursor: pointer; /* Cursor on hover */
-			}
-			
-			.sim_options_label{
-				color:white;
-				display:block;
-				text-align:center;
-				margin: 0 auto;
-			}
-			
-			.sim_options_button{
-				width: 100px;
-				height: 40px;
-				outline: none;
-				background: #4CAF50;
-				opacity: 0.7;
-				border: none;
-				text-color: white;
-				display:block;
-				margin: 0 auto;
-			}
-			
-			.sim_options_button:hover{
-				cursor: pointer;
-				opacity: 1;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="canvas"><div id="sim_canvas_text"></div></div>
-		<div id="options"><span class="sim_options_label">K - momentum</span><input type="range" min="-0.15" max="0.15" value="0.12" step="0.01" id="slider" class="sim_slider" />
-		<span class="sim_options_label">Gauss offset</span><input type="range" min="100" max="400" value="240" step="0.2" id="slider_nc" class="sim_slider" />
-		<span class="sim_options_label">σ</span><input type="range" min="2" max="100" value="25" step="0.2" id="slider_sigma" class="sim_slider" />
-		<span class="sim_options_label">Potential barier start</span><input type="range" min="1" max="800" value="190" step="1" id="slider_x1" class="sim_slider" />
-		<span class="sim_options_label">Potential barier end</span><input type="range" min="1" max="800" value="200" step="1" id="slider_x2" class="sim_slider" />
-		<span class="sim_options_label">Potential barier height</span><input type="range" min="0" max="20" value="100" step="0.1" id="slider_y" class="sim_slider" />
-		<span class="sim_options_label">Mode</span><input type="range" min="0" max="2" value="0" step="1" id="slider_rys" class="sim_slider" /><br>
-		<button type="button" id="reset" class="sim_options_button">Restart!</button>
-		<div class="sim_options_label" id="sim_display_ra">ra = </div>
-		<div class="sim_options_label" id="sim_display_time">Time elapsed = </div>
+		<div class='section header hidden'>
+			<table class="table table-striped ">
+				<tbody>
+					<tr>
+						<td>Home</td>
+					</tr>
+					<tr>
+						<td><a href="well.html">Potential well</a></td>
+					</tr>
+					<tr>
+						<td><a href="gauss.html" >Gauss propagation</a></td>
+					</tr>
+				</tbody>
+			</table>
+				
 		</div>
-		<script src="js/three.js"></script>
-		<script src="js/misc.js"></script>
-		<script src="js/sim.js"></script>
-	</body>
+		<div class='section content'>
+<div id="chartContainer" style="height: 370px; width:100%;"></div>
+		<script>
+
+		
+window.onload = function () {
+
+var dps = []; // dataPoints
+var chart = new CanvasJS.Chart("chartContainer", {
+	title :{
+		text: "Dynamic Data"
+	},
+	axisY: {
+		includeZero: false
+	},      
+	data: [{
+		type: "line",
+		dataPoints: dps
+	}]
+});
+
+var xVal = 0;
+var yVal = 100; 
+var updateInterval = 1000;
+var dataLength = 20; // number of dataPoints visible at any point
+
+var updateChart = function (count) {
+
+	count = count || 1;
+
+	for (var j = 0; j < count; j++) {
+		yVal = yVal +  Math.round(5 + Math.random() *(-5-5));
+		dps.push({
+			x: xVal,
+			y: yVal
+		});
+		xVal++;
+	}
+
+	if (dps.length > dataLength) {
+		dps.shift();
+	}
+
+	chart.render();
+};
+
+updateChart(dataLength);
+setInterval(function(){updateChart()}, updateInterval);
+
+}
+
+		</script>
+						
+		</div>
+		
+		</body>
 </html>
