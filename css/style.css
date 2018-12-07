@@ -29,7 +29,8 @@
 .content {
     background-color: #EAEDF0;
     height: auto;
-    height: 500px;
+    min-height: 500px;
+    height : auto;
     order: 0;
 }
 
@@ -95,6 +96,7 @@ nav {
 
 #canvas {
     width: 100%;
+    max-height:700px;
     height: 100%;
     float: left;
     margin-left: 0;

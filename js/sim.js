@@ -1,33 +1,37 @@
+	$(document).ready(function(){
+		setTimeout(function(){
+
 		var stopper = 0;
 
 
 		    var rysuje = 0;
 		    var K = 0.157;
 		    let width = document.getElementById("canvas").clientWidth;
-		    let height = 700;
+		    
 		    var mouseDr = {};
 
 		    var mouseDown = 0;
-		    let N = 1200;
+		    let N = 1600;
 		    let h = 1;
 		    let mass = 1;
 		    let deltax = 1;
 
-		    var updatesPerFrame = 20;
+		    var updatesPerFrame = 10;
 		    var mouse = new THREE.Vector2();
 		    var mouseOld = new THREE.Vector2();
-
+	            var ratio = N / width;  
 		    let dx = deltax * 1e9;
-		    let sigma = 50;
+		    let sigma = 50 ;
 		    let nc = 200;
 		    var pTotal = 0;
 		    let PI = 3.14159;
 		    
 
-		    var ratio = N / width;
-		    var x1 = 390;
-		    var x2 = 400;
-		    var multiplier = 4000;
+		   
+		    let height = 700;
+		    var x1 = 790/ratio;
+		    var x2 = 800/ratio;
+		    var multiplier = 5000;
 		    var y = 0.1;
 		    var time = 0;
 		    let dt = 0.49;
@@ -59,8 +63,14 @@
 		    theDiv.style.width = width + 'px';
 		    theDiv.style.height = height + 'px';
 
+		    
+		    var stats = new Stats();
+		    stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+                    
+		    stats.dom.style.position = 'absolute';
+		    stats.dom.style.top = document.getElementById("nav").clientHeight + 'px';
 		    theDiv.appendChild(renderer.domElement);
-
+		    theDiv.appendChild( stats.dom );
 		    raycaster = new THREE.Raycaster();
 		    raycaster.linePrecision = 20;
 
@@ -88,6 +98,7 @@
 		    var line2 = new THREE.Line(geometry2, material2);
 		    scene.add(line);
 		    scene.add(line2);
+		    var whichClicked = 0;
 
 		    addListeners();
 
@@ -96,10 +107,12 @@
 		        var t0 = performance.now();
 		        //console.log(stopper);
 		        if (stopper != 1) {
+			    stats.begin();
 		            for (var i = 0; i < updatesPerFrame - 1; i++) {
 		                leapFrog();
 
 		            }
+			    document.getElementById("sim_display_time").innerHTML= 'Time elapsed: ' + parseInt(time) + 'ps'; 
 		            requestAnimationFrame(animate);
 
 		            updatePositions();
@@ -111,13 +124,17 @@
 		            var t1 = performance.now();
 		            //console.log(1/((t1-t0)));
 		            time += dt;
-
+			    stats.end();
 		        }
 
 		    };
 
 		    if (WEBGL.isWebGLAvailable()) {
-		        animate();
+			setTimeout(animate(), 1000);
+
+
+
+		        
 		    } else {
 		        var warning = WEBGL.getWebGLErrorMessage();
 		        document.getElementById('canvas').appendChild(warning);
@@ -125,47 +142,99 @@
 
 		    function render() {
 
-
 		        raycaster.setFromCamera(mouse, camera);
 
 		        var intersects = raycaster.intersectObjects([line], true);
 		        if (intersects.length > 0) {
 		            $('html,body').css('cursor', 'pointer');
-			    changePotential();
-		            vColor = 0xaff22f;
+			    changePotential(1);
+		           
 		        } else {
 		            $('html,body').css('cursor', 'default');
-		            vColor = 0x000000;
+ 			    changePotential(0);
+		            
 		        }
 
 
 		    }
 
 			function onMouseDown(event) {
-				console.log("hi");
+				//console.log("hi");
 
 				mouseDown = 1;
 			}
 			function onMouseUp(event) {
-				console.log("bye");
+				//console.log("bye");
 				mouseDown = 0;
 
 			}
 
 
-			function changePotential(){
+			function changePotential(a){
 				var mouseMoved = {};
 				mouseMoved.x = (mouse.x + 1)/2;
 				mouseMoved.y = (mouse.y + 1)/2;
+
 				if(mouseDown == 1){
-					if(mouseMoved.x * width > x1 && mouseMoved.x * width < x2){
-						y = mouse.y * 0.5;
+
+					if(a == 1){
+					vColor = 0xffaa25;
+					if((mouseMoved.x * width > x1 + 5 && mouseMoved.x * width < x2 -5 && whichClicked == 0) || whichClicked == 1){
+						
+						y = mouse.y *0.35;
+						whichClicked = 1;
+						$('html,body').css('cursor', 'n-resize');
+						setup();
 					}
-					if(mouseMoved.x * width < x1 ){
-						x1 = mouseMoved.x * width;
+					else if((mouseMoved.x * width < x1 && whichClicked == 0) || whichClicked == 2 ){
+						if(mouseMoved.x * width + 1 < x2)
+							x1 = mouseMoved.x * width;
+						whichClicked = 2;
+						$('html,body').css('cursor', 'w-resize');
+						setup();
+
 					}
-					if(mouseMoved.x * width > x2 ){
-						x2 = mouseMoved.x * width;
+					else if((mouseMoved.x * width > x2 && whichClicked == 0) || whichClicked == 3 ){
+						if(mouseMoved.x * width - 1 > x1)
+							x2 = mouseMoved.x * width;
+						whichClicked = 3;
+						$('html,body').css('cursor', 'w-resize');
+						setup();
+					}else{
+						$('html,body').css('cursor', 'pointer');
+						
+						whichClicked = 0;
+
+					}
+					}else if(a==0){
+					 	Color = 0xffaa25;
+						if( whichClicked == 1){
+						
+						y = mouse.y *0.35;
+						whichClicked = 1;
+						$('html,body').css('cursor', 'n-resize');
+						setup();
+					}
+					else if( whichClicked == 2 ){
+						if(mouseMoved.x * width + 1 < x2)
+							x1 = mouseMoved.x * width;
+						whichClicked = 2;
+						$('html,body').css('cursor', 'w-resize');
+						setup();
+
+					}
+					else if(whichClicked == 3 ){
+						if(mouseMoved.x * width - 1 > x1)
+							x2 = mouseMoved.x * width;
+						whichClicked = 3;
+						$('html,body').css('cursor', 'w-resize');
+						setup();
+					}else{
+						 vColor = 0x000000
+
+					}
+
+
 					}
 
 
@@ -173,7 +242,11 @@
 
 
 
-				setup();
+				
+				}else{
+					 vColor = 0x000000
+					whichClicked = 0;
+					
 				}
 
 			}
@@ -189,10 +262,10 @@
 		        {
 		            positions[0] = -width / 2;
 		            positions[1] = 0;
-		            positions[2] = 0;
+		           // positions[2] = 0;
 		            positions2[0] = -width / 2;
 		            positions2[1] = 0;
-		            positions2[2] = 0;
+		          //  positions2[2] = 0;
 
 		            positions[3 * N - 3] = -width / 2 + (N - 1) / ratio;
 		            positions[3 * N - 2] = 0;
@@ -395,4 +468,8 @@
 
 
 		    }
+
+	}, 1000);
+
+});
 		
