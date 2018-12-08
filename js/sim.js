@@ -6,7 +6,7 @@
 
 		    var rysuje = 0;
 		    var K = 0.157;
-		    let width = document.getElementById("canvas").clientWidth;
+		    var width = document.getElementById("canvas").clientWidth;
 		    
 		    var mouseDr = {};
 
@@ -16,7 +16,7 @@
 		    let mass = 1;
 		    let deltax = 1;
 
-		    var updatesPerFrame = 10;
+		    var updatesPerFrame = 30;
 		    var mouse = new THREE.Vector2();
 		    var mouseOld = new THREE.Vector2();
 	            var ratio = N / width;  
@@ -25,6 +25,7 @@
 		    let nc = 200;
 		    var pTotal = 0;
 		    let PI = 3.14159;
+			var rysujeText = ["Density","Imaginaris", "Realis"];
 		    
 
 		   
@@ -52,18 +53,28 @@
 		    window.addEventListener('resize', onWindowResize, false);
 		    var scene = new THREE.Scene();
 
-		    var camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 0, 1000);
+		    var camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, -1, 1000);
 
 		    var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		    renderer.setSize(width, height);
 		    var theDiv = document.getElementById("canvas");
-	            renderer.domElement.addEventListener("mousedown", onMouseDown, true);
-	            renderer.domElement.addEventListener("mouseup", onMouseUp, true);
+	        renderer.domElement.addEventListener("mousedown", onMouseDown, true);
+	        renderer.domElement.addEventListener("mouseup", onMouseUp, true);
 
 		    theDiv.style.width = width + 'px';
 		    theDiv.style.height = height + 'px';
 
-		    
+		    $("#mode").removeClass("hidden");
+			document.querySelector(".sim_mode").innerHTML = rysujeText[rysuje]; 
+			
+			$("#mode").click(function(){
+				rysuje = (rysuje + 1)%3; 	
+			
+				document.querySelector(".sim_mode").innerHTML = rysujeText[rysuje]; 
+
+			});
+				
+				
 		    var stats = new Stats();
 		    stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
                     
@@ -77,7 +88,7 @@
 		    document.addEventListener('mousemove', onDocumentMouseMove, false);
 
 		    var geometry = new THREE.BufferGeometry();
-
+			var once = 1;
 		    var geometry2 = new THREE.BufferGeometry();
 
 		    geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -98,6 +109,7 @@
 		    var line2 = new THREE.Line(geometry2, material2);
 		    scene.add(line);
 		    scene.add(line2);
+			
 		    var whichClicked = 0;
 
 		    addListeners();
@@ -124,7 +136,7 @@
 		            var t1 = performance.now();
 		            //console.log(1/((t1-t0)));
 		            time += dt;
-			    stats.end();
+					stats.end();
 		        }
 
 		    };
@@ -237,11 +249,6 @@
 
 					}
 
-
-
-
-
-
 				
 				}else{
 					 vColor = 0x000000
@@ -301,14 +308,10 @@
 
 		    }
 
-		    function onWindowResize() {
+		    function onWindowResize(){
+				
 
-		        //camera.aspect = window.innerWidth / window.innerHeight;
-		        //camera.updateProjectionMatrix();
-
-		        //renderer.setSize(0.8 * window.innerWidth, window.innerHeight );
-
-		    }
+			}
 
 		    function leapFrog() {
 		        // imag[0] = -imag[2];

@@ -18,10 +18,26 @@ class Simulation {
         this.x = [];
 	this.V = [];
 	this.tau = 0;
+	this. time = 0;
     }
 	
     calculateStationary(n, k) {
         return Math.sqrt(2) * Math.sin(n * Math.PI * k * this.dx);
+    }
+
+    update(){
+	for(var jj = 0; jj< this.wellPositions.length; jj+=2){
+      		for (var ii = this.wellPositions[jj]; ii < this.wellPositions[jj+1]; ii++)
+		{
+            		this.re[ii] = this.calculateStationary(this.n, ii-this.wellPositions[jj])*(Math.cos(this.time));
+            		this.x[ii] = ii;
+            		this.im[ii] = this.calculateStationary(this.n, ii-this.wellPositions[jj])*(Math.sin(this.time));
+	    		this.p[ii] = this.re[ii] * this.re[ii] + this.im[ii] * this.im[ii];
+			this.V[ii] = this.wellHeights[jj/2];
+        	}
+	}
+	this.time+=0.01;
+
     }
 	
     setup() {
@@ -32,7 +48,7 @@ class Simulation {
 		{
             		this.re[ii] = this.calculateStationary(this.n, ii-this.wellPositions[jj]);
             		this.x[ii] = ii;
-            		this.im[ii] = 0;
+            		this.im[ii] = this.calculateStationary(this.n, ii-this.wellPositions[jj])*(Math.sin(this.time));
 	    		this.p[ii] = this.re[ii] * this.re[ii] + this.im[ii] * this.im[ii];
 			this.V[ii] = this.wellHeights[jj/2];
         	}
@@ -68,6 +84,7 @@ class RenderIt{
         this.height = 700;
         this.positions = new Float32Array(this.N * 3);
 	this.positionsRe = new Float32Array(this.N * 3);
+	this.positionsIm = new Float32Array(this.N * 3);
 	this.positionsWell = new Float32Array(this.N * 3);
         this.renderer = null;
         this.scene = null;
@@ -76,6 +93,7 @@ class RenderIt{
 	this.line = null;
 	this.lineRe = null;
 	this.lineWell = null;
+	this.lineIm = null;
 	this.sim = new Simulation();
  	this.ratio = this.N / this.width;
 
@@ -114,10 +132,16 @@ class RenderIt{
 		geometry3.addAttribute('position', new THREE.BufferAttribute(this.positionsWell, 3));
 		geometry3.setDrawRange(0, this.N);
 		this.lineWell = new THREE.Line( geometry3, material3 );
-	
+		var geometry4 = new THREE.BufferGeometry();
+		var material4 = new THREE.LineBasicMaterial({ color: 0xf6a52, linewidth: 2 });
+		geometry4.addAttribute('position', new THREE.BufferAttribute(this.positionsIm, 3));
+		geometry4.setDrawRange(0, this.N);
+		this.lineIm = new THREE.Line( geometry4, material4 );
+
 
 		this.scene.add(this.line);
 		this.scene.add(this.lineRe);
+		this.scene.add(this.lineIm);
 		this.scene.add(this.lineWell);
 
 
@@ -126,15 +150,20 @@ class RenderIt{
 	
 	updatePositions(){
 				
-		
+		this.sim.update();
 		for(var i=0;i<3 *( this.N+1); i+=3){
 			this.positions[ i ] = (-0.9*this.width/2+i*0.9/(this.ratio*3))
-			this.positions[ i+1 ] = 80*this.sim.p[i/3];
+			this.positions[ i+1 ] =-this.height/3 + 50*this.sim.re[i/3];
 			this.positions[ i+2 ] = 0;
 
 			this.positionsRe[ i ] = (-0.9*this.width/2+i*0.9/(this.ratio*3))
-			this.positionsRe[ i+1 ] = -this.height/3 + 50*this.sim.re[i/3];
+			this.positionsRe[ i+1 ] =  80*this.sim.p[i/3];
 			this.positionsRe[ i+2 ] = 0;
+			
+			this.positionsIm[ i ] = (-0.9*this.width/2+i*0.9/(this.ratio*3))
+			this.positionsIm[ i+1 ] =  -this.height/3 +  50*this.sim.im[i/3];
+			this.positionsIm[ i+2 ] = 0;
+
 
 			this.positionsWell[ i ] = (-0.9*this.width/2+i*0.9/(this.ratio*3))
 			this.positionsWell[ i+1 ] = 50*this.sim.V[i/3];
@@ -155,6 +184,7 @@ this.animate = function() {
 			abc.updatePositions();
 			abc.line.geometry.attributes.position.needsUpdate = true;
 			abc.lineRe.geometry.attributes.position.needsUpdate = true;
+			abc.lineIm.geometry.attributes.position.needsUpdate = true;
 			abc.lineWell.geometry.attributes.position.needsUpdate = true;
 
 			abc.renderer.render(abc.scene, abc.camera);
