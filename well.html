@@ -5,7 +5,8 @@
     <script src="../js/jquery.min.js"></script>
     <script src="../js/ui.js"></script>
     <script src="js/three.js"></script>
-
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML'></script>
     <meta charset=utf-8>
     <meta name="viewport" content="width=device-width, user-scalable=no" />
     <title>Schrödinger FTDT</title>
@@ -45,10 +46,40 @@
 <div class='section options'>
     <div class="sim_options_params">
         <div class="sim_options_params_inner">
-            <span class="sim_options_label">n</span><input type="range" min="1" max="10" value="1" step="1" id="reset" class="sim_slider" />
-        </div>
+            <span class="sim_options_label">n</span><input type="range" min="1" max="10" value="2" step="1" id="reset_n" class="sim_slider" />
+			<span class="sim_options_label">$$\omega$$</span><input type="range" min="1" max="10" value="5" step="1" id="reset_w" class="sim_slider" />
+			<span class="sim_options_label">$$\kappa$$</span><input type="range" min="0" max="10" value="10" step="1" id="reset_k" class="sim_slider" />
+			<span class="sim_options_label">Speed</span><input type="range" min="0" max="50" value="10" step="1" id="reset_speed" class="sim_slider" />
     </div>
-</div>		
+</div>	
+    <div class="sim_options_params">
+	<div class="sim_options_params_inner">
+		<span id="sim_n_val">$$n=2$$</span>
+		<span id="sim_w_val">$$\frac{5}{2}\cdot \pi^2$$</span>
+		<span id="sim_k_val">$$\kappa=10$$</span>
+	</div>
+</div>
+</div>
+<div class="page-container">
+<div class="section feature-1">
+<div id="chartContainer" style="height: 100%; width:100%;">
+		<canvas id="myChart"></canvas>
+		</div>
+</div>
+
+<div class="section feature-2">
+<div id="chartContainer" style="height: 100%; width:100%;">
+		<canvas id="myChart2"></canvas>
+		</div>
+</div>
+
+<div class="section feature-3">
+<div id="chartContainer" style="height: 100%; width:100%;">
+		<canvas id="myChart3"></canvas>
+		</div>
+</div>
+</div>
+	
 		<script src="js/misc.js "></script>
 		<script src="js/simOfWell.js "></script>
 	</body>

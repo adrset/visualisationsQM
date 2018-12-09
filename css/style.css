@@ -59,7 +59,9 @@ canvas{
 }
 
 .options {
-    background-color: #A5CA8E;
+    background-color: #5995FF;
+	height:auto;
+	min-height:200px;
 }
 
 .feature-1 {
@@ -110,12 +112,13 @@ nav {
 .sim_options_params {
     height: 100%;
     width: 60%;
+	padding-bottom:2%;
 }
 
 .sim_options_params_inner {
-    margin-top: 10%;
-    height: 90%;
-    width: 90%;
+    margin-top: 3%;
+    height: 94%;
+    width: 95%;
 }
 
 #canvas {
@@ -164,7 +167,7 @@ nav {
     /* Set a specific slider handle width */
     height: 25px;
     /* Slider handle height */
-    background: #4CAF50;
+    background: #5995DA;
     /* Green background */
     cursor: pointer;
     /* Cursor on hover */
@@ -175,7 +178,7 @@ nav {
     /* Set a specific slider handle width */
     height: 25px;
     /* Slider handle height */
-    background: #4CAF50;
+    background: #5995DA;
     /* Green background */
     cursor: pointer;
     /* Cursor on hover */
@@ -192,7 +195,7 @@ nav {
     width: 100px;
     height: 40px;
     outline: none;
-    background: #4CAF50;
+    background: #5995DA;
     opacity: 0.7;
     border: none;
     text-color: white;
