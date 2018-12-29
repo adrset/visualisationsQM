@@ -29,7 +29,7 @@ class Simulation {
 		
 		this.N + 1; ii++)
 			ret += (this.re[ii] * this.re[ii] + this.im[ii] * this.im[ii]);
-		return ret;
+		return ret*this.dx;
 	}
 	
 	calculateAvPos()
@@ -193,7 +193,7 @@ class RenderIt{
 		if(this.iter%20 == 0){
 			addData(myChart, "", {x: this.iter/10, y:50*this.sim.calculateAvEnergy()});
 			addData(myChart2, "", {x: this.iter/10, y:50*this.sim.calculateAvPos()});
-			addData(myChart3, "", {x: this.iter/10, y:50*this.sim.calculateNorm()});
+			addData(myChart3, "", {x: this.iter/10, y:this.sim.calculateNorm()});
 			//myChartaddData();
 		}
 		this.sim.update();
@@ -234,7 +234,7 @@ var myChart = new Chart(ctx, {
          label: "Average energy",
 		 data: [],
 		 fillColor: "rgba(0, 138, 212,0.5)",
-		 pointBackgroundColor : "rgba(0, 138, 212,0.5)"
+		 pointBackgroundColor : "rgba(255, 0, 0,1)"
       }]
    },  
    options: {
@@ -275,7 +275,7 @@ var myChart2 = new Chart(ctx2, {
          label: "Average position",
 		 data: [],
 		 fillColor: "rgba(0, 138, 212,0.5)",
-		 pointBackgroundColor : "rgba(0, 138, 212,0.5)"
+		  pointBackgroundColor : "rgba(255, 0, 0,1)"
       }]
    },  
    options: {
@@ -316,7 +316,7 @@ var myChart3 = new Chart(ctx3, {
          label: "Norm",
 		 data: [],
 		 fillColor: "rgba(0, 138, 212,0.5)",
-		 pointBackgroundColor : "rgba(0, 138, 212,0.5)"
+		 pointBackgroundColor : "rgba(255, 0, 0,1)"
       }]
    },  
    options: {
@@ -343,6 +343,10 @@ var myChart3 = new Chart(ctx3, {
                 },
                 ticks: {
                   fontColor: "#000000",
+				  beginAtZero: true,
+                  steps: 10,
+                  stepValue: 0.2,
+                  max: 2
                 },
             }],
         }

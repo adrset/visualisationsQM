@@ -1,0 +1,486 @@
+var theDiv = document.getElementById("canvas");
+class Simulation{
+	
+	constructor (){
+		this.K = 0.157;
+		this.width = document.getElementById("canvas").clientWidth;
+		this.N = 1600;
+		this.h = 1;
+		this.mass = 1;
+	    this.deltax = 1;
+	    this.ratio = this.N / this.width;  
+		this.dx = this.deltax * 1e9;
+		this.sigma = 50 ;
+		this.nc = 200;
+		this.pTotal = 0;
+		this.height = 700;
+		this.x1 = 790/this.ratio;
+		this.x2 = 800/this.ratio;
+		this.y = 0.1;
+		this.time = 0;
+		this.dt = 0.49;
+		this.ra = (0.5 * this.h / this.mass) * (this.dt / Math.pow(this.deltax, 2));    
+		this.V = [];
+		this.imag = [];
+		this.real = [];
+		this.sum = [];
+		this.pos = [];
+		
+		
+		
+	}
+	
+	leapFrog() {
+		// imag[0] = -imag[2];
+		// imag[N - 1] = -imag[N - 3];
+		for (var i = 0; i < this.N; i++) {
+			if(i==0){
+				this.real[i] += -this.ra * (this.imag[i + 1] - 2 * this.imag[i] + this.imag[this.N-1]) + (this.dt / this.h) * this.V[i] * this.imag[i];
+				
+			}else if(i==this.N-1){
+				this.real[i] += -this.ra * (this.imag[0] - 2 * this.imag[i] + this.imag[i-1]) + (this.dt / this.h) * this.V[i] * this.imag[i];
+				
+			}else{
+				this.real[i] += -this.ra * (this.imag[i + 1] - 2 * this.imag[i] + this.imag[i - 1]) + (this.dt / this.h) * this.V[i] * this.imag[i];
+			}
+		}
+		
+		for (var i = 0; i < this.N; i++) {
+			if(i==0){
+				this.imag[i] += this.ra * (this.real[i + 1] - 2 * this.real[i] + this.real[this.N-1]) - (this.dt / this.h) * this.V[i] * this.real[i];
+			}else if(i == this.N-1){
+				this.imag[i] += this.ra * (this.real[0] - 2 * this.real[i] + this.real[i - 1]) - (this.dt / this.h) * this.V[i] * this.real[i];
+			}else{
+				this.imag[i] += this.ra * (this.real[i + 1] - 2 * this.real[i] + this.real[i - 1]) - (this.dt / this.h) * this.V[i] * this.real[i];
+			}
+			
+		}
+	}
+	
+	setup() {
+		this.resetPotential();
+		this.time = 0;
+		for (var i = 0; i < this.N ; i++) {
+			this.real[i] = Math.exp(-1.0 * Math.pow((((i - this.nc)/this.ratio) / (this.sigma * Math.sqrt(2))), 2)) * Math.cos(this.K * ((i - this.nc)/this.ratio));
+			this.imag[i] = Math.exp(-1.0 * Math.pow((((i - this.nc)/this.ratio) / (this.sigma * Math.sqrt(2))), 2)) * Math.sin(this.K * ((i - this.nc)/this.ratio));
+			//pos[i] = dx * i;
+			this.pTotal = this.pTotal + Math.pow(this.imag[i], 2) + Math.pow(this.real[i], 2);
+		}
+
+		// set values on the end to 0
+		//imag[0] = 0; // set 0 at boundaries
+		//real[0] = 0; // set 0 at boundaries
+	   // real[N - 1] = 0;
+	   // imag[N - 1] = 0;
+
+		var norm = Math.sqrt(this.pTotal);
+		this.pTotal = 0.0;
+
+		for (var i = 0; i < this.N; i++) {
+			this.real[i] /= norm;
+			this.imag[i] /= norm;
+			this.pTotal += Math.pow(this.imag[i], 2) + Math.pow(this.real[i], 2);
+		}
+
+	}
+
+	resetPotential() {
+		// define the Barier		
+		for (var i = 0; i < this.N; i++) {
+			this.V[i] = 0;
+		}
+
+		for (var i = parseInt(this.x1*this.ratio); i < parseInt(this.x2*this.ratio); i++) {
+			this.V[i] = this.y * 0.2;
+		}
+
+	}
+	
+	
+
+};
+
+class RenderIt{
+	constructor (){
+		this.positions = new Float32Array(this.N * 3); // 3 vertices per point
+		this.positions2 = new Float32Array(this.N * 3); // 3 vertices per point
+		this.sim = new Simulation();
+		this.mouseDr = {};
+		this.mouseDown = 0;
+		this.multiplier = 5000;
+		this.updatesPerFrame = 30;
+		this.mouse = new THREE.Vector2();
+		this.mouseOld = new THREE.Vector2();
+		this.stopper = 0;
+		this.whichClicked = 0;
+		this.scene = null;
+		this.camera = null;
+		this.renderer = null;
+		this.line = null;
+		this.line2 = null;
+		this.raycaster = null;
+		this.vColor = 0x00000;
+		console.log("cons");
+	}
+	
+	init(){
+		
+		window.addEventListener('resize', this.onWindowResize, false);
+		this.scene = new THREE.Scene();
+
+		this.camera = new THREE.OrthographicCamera(this.sim.width / -2, this.sim.width / 2, this.sim.height / 2, this.sim.height / -2, 0, 1000);
+
+		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+		this.renderer.setSize(this.sim.width, this.sim.height);
+		
+		this.renderer.domElement.addEventListener("mousedown", this.onMouseDown, true);
+		this.renderer.domElement.addEventListener("mouseup", this.onMouseUp, true);
+
+		theDiv.style.width = this.sim.width + 'px';
+		theDiv.style.height = this.sim.height + 'px';
+
+		
+		this.stats = new Stats();
+		this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+				
+		this.stats.dom.style.position = 'absolute';
+		this.stats.dom.style.top = document.getElementById("nav").clientHeight + 'px';
+		theDiv.appendChild(this.renderer.domElement);
+		theDiv.appendChild( this.stats.dom );
+		this.raycaster = new THREE.Raycaster();
+		this.raycaster.linePrecision = 20;
+
+		document.addEventListener('mousemove', this.onDocumentMouseMove, false);
+
+		this.geometry = new THREE.BufferGeometry();
+
+		this.geometry2 = new THREE.BufferGeometry();
+
+		this.geometry.addAttribute('position', new THREE.BufferAttribute(this.positions, 3));
+		this.geometry2.addAttribute('position', new THREE.BufferAttribute(this.positions2, 3));
+
+		// draw range
+		this.drawCount = this.sim.N; // draw the first 2 points, only
+		this.geometry.setDrawRange(0, this.drawCount);
+		this.geometry2.setDrawRange(0, this.drawCount);
+
+		// material
+		this.material = new THREE.LineBasicMaterial({ color: this.vColor, linewidth: 2 });
+		// material
+		this.material2 = new THREE.LineBasicMaterial({ color: 0xaa00fd, linewidth: 2 });
+
+		// line
+		this.line = new THREE.Line(this.geometry, this.material);
+		this.line2 = new THREE.Line(this.geometry2, this.material2);
+		this.scene.add(this.line);
+		this.scene.add(this.line2);
+		
+	}
+	
+	changePotential(a){
+		var mouseMoved = {};
+		mouseMoved.x = (this.mouse.x + 1)/2;
+		mouseMoved.y = (this.mouse.y + 1)/2;
+
+		if(this.mouseDown == 1){
+
+			if(a == 1){
+				this.vColor = 0xffaa25;
+				if((mouseMoved.x * this.width > this.x1 + 5 && mouseMoved.x * this.width < this.x2 -5 && this.whichClicked == 0) || this.whichClicked == 1){
+					
+					this.y = mouse.y *0.35;
+					this.whichClicked = 1;
+					$('html,body').css('cursor', 'n-resize');
+					this.setup();
+				}
+				else if((mouseMoved.x * this.width < this.x1 && this.whichClicked == 0) || this.whichClicked == 2 ){
+					if(mouseMoved.x * this.width + 1 < this.x2)
+						this.x1 = mouseMoved.x * this.width;
+					this.whichClicked = 2;
+					$('html,body').css('cursor', 'w-resize');
+					this.setup();
+
+				}
+				else if((mouseMoved.x * this.width > this.x2 && this.whichClicked == 0) || this.whichClicked == 3 ){
+					if(mouseMoved.x * this.width - 1 > this.x1)
+						x2 = mouseMoved.x * this.width;
+					this.whichClicked = 3;
+					$('html,body').css('cursor', 'w-resize');
+					this.setup();
+				}else{
+					$('html,body').css('cursor', 'pointer');
+					
+					this.whichClicked = 0;
+				}
+			}else if(a==0){
+				this.Color = 0xffaa25;
+				if( whichClicked == 1){
+					this.y = this.mouse.y *0.35;
+					this.whichClicked = 1;
+					$('html,body').css('cursor', 'n-resize');
+					this.setup();
+				}
+				else if( this.whichClicked == 2 ){
+					if(mouseMoved.x * this.width + 1 < this.x2)
+						x1 = mouseMoved.x * width;
+					this.whichClicked = 2;
+					$('html,body').css('cursor', 'w-resize');
+					this.setup();
+
+				}
+				else if(this.whichClicked == 3 ){
+					if(mouseMoved.x * this.width - 1 > this.x1)
+						this.x2 = mouseMoved.x * this.width;
+					
+					this.whichClicked = 3;
+					$('html,body').css('cursor', 'w-resize');
+					this.setup();
+				}else{
+					this.vColor = 0x000000
+
+				}
+
+			}
+
+		}else{
+			this.vColor = 0x000000
+			this.whichClicked = 0;
+			
+		}
+
+	}
+	
+	render() {
+		
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+
+		var intersects = this.raycaster.intersectObjects([this.line], true);
+		if (intersects.length > 0) {
+			$('html,body').css('cursor', 'pointer');
+		this.changePotential(1);
+		   
+		} else {
+			$('html,body').css('cursor', 'default');
+		this.changePotential(0);
+			
+		}
+
+
+	}
+
+	onMouseDown(event) {
+		console.log("hi");
+		this.mouseDown = 1;
+	}
+	onMouseUp(event) {
+		console.log("bye");
+		this.mouseDown = 0;
+
+	}
+
+
+			
+
+	updatePositions() {
+
+		//var positions = this.line.geometry.attributes.position.array;
+		//var positions2 = this.line2.geometry.attributes.position.array;
+
+		var index = 3,
+			index2 = 3;
+		// set values on the borders
+		{
+			this.positions[0] = -this.sim.width / 2;
+			this.positions[1] = 0;
+		   // positions[2] = 0;
+			this.positions2[0] = -this.sim.width / 2;
+			this.positions2[1] = 0;
+		  //  positions2[2] = 0;
+
+			this.positions[3 * this.sim.N - 3] = -this.sim.width / 2 + (this.sim.N - 1) / this.sim.ratio;
+			this.positions[3 * this.sim.N - 2] = 0;
+			this.positions[3 * this.sim.N - 1] = 0;
+			this.positions2[3 * this.sim.N - 3] = -this.sim.width / 2 + (this.sim.N - 1) / this.sim.ratio;
+			this.positions2[3 * this.sim.N - 2] = 0;
+			this.positions2[3 * this.sim.N - 1] = 0;
+		}
+		this.line.material.color.setHex(this.sim.vColor);
+		this.sim.leapFrog();
+
+		for (var i = 0; i < this.sim.N ; i++) {
+
+			this.positions[index++] = -this.sim.width / 2 + i / this.sim.ratio;
+			this.positions[index++] = this.multiplier * this.sim.V[i];
+			this.positions[index++] = 0;
+
+			this.positions2[index2++] = -this.sim.width / 2 + i / this.sim.ratio;
+			if (this.rysuje == 0) {
+				this.positions2[index2++] = this.multiplier * (this.sim.imag[i] * this.sim.imag[i] + this.sim.real[i] * this.sim.real[i]);
+				this.line2.material.color.setHex(0xff0505);
+			} else if (this.rysuje == 1) {
+				this.positions2[index2++] = this.multiplier / 3 * (this.sim.imag[i]);
+				this.line2.material.color.setHex(0xf4e107);
+			} else if (this.rysuje == 2) {
+				this.line2.material.color.setHex(0x45e506);
+				this.positions2[index2++] = this.multiplier / 3 * (this.sim.real[i]);
+			}
+			this.positions2[index2++] = 0;
+
+		}
+
+
+	}
+
+	onWindowResize() {
+		console.log(this.mouse);
+		//camera.aspect = window.innerWidth / window.innerHeight;
+		//camera.updateProjectionMatrix();
+
+		//renderer.setSize(0.8 * window.innerWidth, window.innerHeight );
+
+	}
+
+   
+	onDocumentMouseMove(event) {
+		
+		//event.preventDefault();
+		// TODO: use mouse cords only inside canvas!
+		var rect = theDiv.getBoundingClientRect();
+		if (event.clientX > rect.x && event.clientX < rect.x + rect.width) {
+
+			if (event.clientY > rect.y && event.clientY < rect.y + rect.height) {
+
+		this.mouseDr.x = this.mouse.x - this.mouseOld.x;
+		this.mouseDr.y = this.mouse.y - this.mouseOld.y;
+		//console.log(mouseDr);
+		this.mouseOld.x = this.mouse.x;
+		this.mouseOld.y = this.mouse.y;
+
+				this.mouse.x = ((event.clientX - rect.x) / this.sim.width) * 2 - 1;
+				this.mouse.y = -((event.clientY - rect.y) / this.sim.height) * 2 + 1;
+				
+			}
+		}
+
+	}   
+
+	addListeners() {
+		var slider = document.getElementById("slider");
+		slider.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			this.sim.K = (target.value);
+			console.log(target.value);
+			this.sim.setup();
+		});
+
+		var sliderx1 = document.getElementById("slider_x1");
+		sliderx1.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			if (target.value < this.sim.x2)
+				this.sim.x1 = (target.value);
+			else {
+				this.sim.x1 = this.sim.x2 - 5;
+				target.value = this.sim.x2 - 5;
+			}
+			this.sim.setup();
+		});
+
+		var slidery = document.getElementById("slider_y");
+		slidery.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			this.sim.y = (target.value);
+			this.sim.setup();
+		});
+
+		var sliderx2 = document.getElementById("slider_x2");
+		sliderx2.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			if (target.value > x1)
+				x2 = (target.value);
+			else {
+				x2 = x1 + 5;
+				target.value = x1 + 5;
+			}
+			this.sim.setup();
+		});
+
+		var sliderRys = document.getElementById("slider_rys");
+		sliderRys.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			this.sim.rysuje = (target.value);
+		});
+
+		var sliderNc = document.getElementById("slider_nc");
+		sliderNc.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			this.sim.nc = (target.value);
+			this.sim.setup();
+		});
+
+		var sliderSigma = document.getElementById("slider_sigma");
+		sliderSigma.addEventListener("input", function(e) {
+			var target = (e.target) ? e.target : e.srcElement;
+			this.sim.sigma = (target.value);
+			this.sim.setup();
+		});
+
+		var reset = document.getElementById("reset");
+		reset.addEventListener("click", function resetSim(e) {
+			this.sim.vCustom = 0;
+			this.sim.setup();
+		});
+
+
+	}
+	
+};
+
+var ren = new RenderIt();
+ren.sim.setup();  
+
+ren.init();
+
+		   
+		    
+ren.addListeners();
+
+var animate = function() {
+
+	var t0 = performance.now();
+	//console.log(stopper);
+	if (ren.stopper != 1) {
+	ren.stats.begin();
+		for (var i = 0; i < ren.updatesPerFrame - 1; i++) {
+			ren.sim.leapFrog();
+
+		}
+		document.getElementById("sim_display_time").innerHTML= 'Time elapsed: ' + parseInt(ren.sim.time) + 'ps'; 
+		requestAnimationFrame(animate);
+
+		ren.updatePositions();
+
+		ren.line.geometry.attributes.position.needsUpdate = true;
+		ren.line2.geometry.attributes.position.needsUpdate = true;
+		ren.renderer.render(ren.scene, ren.camera);
+		ren.render();
+		var t1 = performance.now();
+		//console.log(1/((t1-t0)));
+		ren.sim.time += ren.sim.dt;
+		ren.stats.end();
+	}
+
+};
+
+if (WEBGL.isWebGLAvailable()) {
+setTimeout(animate(), 1000);
+
+
+
+	
+} else {
+	var warning = WEBGL.getWebGLErrorMessage();
+	document.getElementById('canvas').appendChild(warning);
+}
+
+		    
+

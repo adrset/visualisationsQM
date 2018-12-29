@@ -1,6 +1,0 @@
-Options +Indexes
-IndexOptions FancyIndexing FoldersFirst NameWidth=30 DescriptionWidth=30
-AuthType Basic
-AuthName "Podaj haslo"
-AuthBasicProvider web-user
-Require web-group userzy

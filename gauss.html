@@ -6,7 +6,9 @@
 
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML'></script>
 
-    <script src="../js/jquery.min.js"></script>    <script src="js/three.js"></script>
+    <script src="../js/jquery.min.js"></script>   
+	<script src="js/three.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
     <script src="../js/ui.js"></script>
     <script src="../js/libs/stats.js"></script>
     <meta charset=utf-8>
@@ -22,49 +24,59 @@
 
     <!--<nav><span class="nav_title">Quantum mechanics simulations</span><div class="nav_hamburger"></div></nav>-->
     <div id="nav" class='menu'>
-        <span class="nav_title" ">Quantum Mechanics</span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div></div>
+        <span class="nav_title">Fizyka kwantowa</span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div></div>
 		
-		<div class='section header hidden'>
-			<table class="table table-striped ">
+		<div id="menu_container" class='section header hidden'>
+			<table class="table table-striped " style="z-index:3;">
 				<tbody>
 					<tr>
 						<td><a href="index.html" >Home</a></td>
 					</tr>
 					<tr>
-						<td><a href="well.html">Potential well</a></td>
+						<td><a href="well.html">Nieskończona studnia potencjału</a></td>
 					</tr>
 					<tr>
-						<td>Gauss propagation</td>
+						<td><a href="well2.html">Skończona studnia potencjału</a></td>
+					</tr>
+					<tr>
+						<td>Rozpraszanie paczki Gaussa</td>
 					</tr>
 				</tbody>
 			</table>
 				
 		</div>
 		
-				<div id="canvas" class="section"><div id="mode" class="hidden"><div class="sim_mode"></div></div></div>
+				<div id="canvas" class="section"><div id="mode" class="hidden"><div class="sim_mode"></div></div><div id="restart" class="hidden"><div class="restart_click">RESTART</div></div><div id="time_elapsed"></div></div>
 		
 		
 		<div class='section options'>
     
     <div class="sim_options_params">
         <div class="sim_options_params_inner">
-            <span class="sim_options_label">K - momentum</span><input type="range" min="-0.15" max="0.15" value="0.12" step="0.01" id="slider" class="sim_slider" />
-            <span class="sim_options_label">Gauss offset</span><input type="range" min="200" max="400" value="240" step="0.2" id="slider_nc" class="sim_slider" />
+            <span class="sim_options_label">K - pęd</span><input type="range" min="-0.15" max="0.15" value="0.12" step="0.01" id="slider" class="sim_slider" />
+            <span class="sim_options_label">Przesunięcie</span><input type="range" min="200" max="400" value="240" step="0.2" id="slider_nc" class="sim_slider" />
             <span class="sim_options_label">σ</span><input type="range" min="2" max="100" value="25" step="0.2" id="slider_sigma" class="sim_slider" />
         </div>
     </div>
     <div class="sim_options_params">
         <div class="sim_options_params_inner">
-            <span class="sim_options_label">Potential barier start</span><input type="range" min="1" max="800" value="190" step="1" id="slider_x1" class="sim_slider" />
-            <span class="sim_options_label">Potential barier end</span><input type="range" min="1" max="800" value="200" step="1" id="slider_x2" class="sim_slider" />
-            <span class="sim_options_label">Potential barier height</span><input type="range" min="0" max="0.2" value="0.01" step="0.01" id="slider_y" class="sim_slider" />
+            <span class="sim_options_label">Punkt startowy bariery</span><input type="range" min="1" max="1600" value="190" step="1" id="slider_x1" class="sim_slider" />
+            <span class="sim_options_label">Punkt końcowy bariery</span><input type="range" min="1" max="1600" value="200" step="1" id="slider_x2" class="sim_slider" />
+            <span class="sim_options_label">Wysokość bariery</span><input type="range" min="0" max="0.2" value="0.01" step="0.01" id="slider_y" class="sim_slider" />
         </div>
     </div>
     <div class="sim_options_params">
         <div class="sim_options_params_inner">
-            <span class="sim_options_label">Mode</span><input type="range" min="0" max="2" value="0" step="1" id="slider_rys" class="sim_slider" /><br>
-            <button type="button" id="reset" class="sim_options_button">Restart!</button>
-            <div class="sim_options_label" id="sim_display_time">Time elapsed = </div>
+            <!--<span class="sim_options_label">Tryb rysowania</span><input type="range" min="0" max="2" value="0" step="1" id="slider_rys" class="sim_slider" />-->
+			<span class="sim_options_label">dt</span><input type="range" min="0.20" max="0.99" value="0.49" step="0.01" id="slider_dt" class="sim_slider" />
+			<span class="sim_options_label">Speed</span><input type="range" min="1" max="20" value="10" step="1" id="slider_upf" class="sim_slider" />
+			<span class="sim_options_label">Preset</span>
+			 <select selected="barrier_int" id="sim_options_preset_select" class="sim_slider">
+			  <option value="barrier_int">Bariera</option>
+			  <option value="step">Schodek</option>
+			  <option value="well">Studnia</option>
+			  <option value="well_2">Dwie studnie</option>
+			</select> 
         </div>
     </div>
 </div>
@@ -74,10 +86,12 @@
        $${\displaystyle \operatorname {\hat {H}} \vert \Psi \rangle =E\vert \Psi \rangle }$$
     </div>
     <div class='section feature-2'>
-        <img src='images/feature.svg' />
-    </div>
+       <div id="chartContainer" style="height: 100%; width:100%;">
+		<canvas id="myChart"></canvas>
+		</div>
+	</div>
     <div class='section feature-3'>
-        <img src='images/feature.svg' />
+        $$\alpha = $$ <span id="sim_alpha_val"></span>
     </div>
 </div>		<script src="js/misc.js "></script>
 		<script src="js/sim.js "></script>
