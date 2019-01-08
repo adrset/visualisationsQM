@@ -2,88 +2,83 @@
 <html>
 
 <head>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML'></script>
     <script src="../js/jquery.min.js"></script>
     <script src="../js/ui.js"></script>
     <script src="js/three.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML'></script>
+
     <meta charset=utf-8>
     <meta name="viewport" content="width=device-width, user-scalable=no" />
     <title>Schrödinger FTDT</title>
-    <link rel="stylesheet" type="text/css" href="../css/style.css">
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
 </head>
 
 <body>
 
-    <div id="nav" class='menu'>
-        <span class="nav_title">Fizyka kwantowa</span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div></div>
+    <div id="nav" class="menu">
+        <span class="nav_title" >Fizyka kwantowa - symulacje</span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div></div>
 		
-		<div class="section header hidden">
+		<div id="menu_container" class="section header hidden">
 			<table class="table table-striped ">
-				<tbody>
-					<tr>
-						<td><a href="index.html" >Home</a></td>
-					</tr>
-					<tr>
-						<td>Nieskończona studnia potencjału</td>
-					</tr>
-					<tr>
-						<td><a href="well2.html">Skończona studnia potencjału</a></td>
-					</tr>
-					<tr>
-						<td><a href="gauss.html" >Rozpraszanie paczki Gaussa</a></td>
-					</tr>
-				</tbody>
+				 <tbody>
+               <tr>
+                  <td><a href="index.html" >Home</a></td>
+               </tr>
+               <tr>
+                  <td>Niesko?czona studnia potencja?u</td>
+               </tr>
+               <tr>
+                  <td><a href="well2.html">Sko?czona studnia potencja?u</a></td>
+               </tr>
+               <tr>
+                  <td><a href="gauss.html" >Rozpraszanie paczki Gaussa</a></td>
+               </tr>
+            </tbody>
 			</table>
 				
 		</div>
 		<div class='section content'>
-			<div id="canvas" class="section "><div id="sim_canvas_text "></div></div>
-		
+			      <div id="canvas" class="section">
+         <div id="mode" class="hidden movable">
+            <div class="sim_mode"></div>
+         </div>
+         <div id="sim_mode_expand" class="hidden movable">
+            <div id="sim_mode_expand_container">
+               <span class="sim_mode_expand_label">Ktore rozwiazania</span>
+               <div id="sim_mode_draw">
+                  <div><input id="n1" type="checkbox" name="density" value="density" checked />1 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase1" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n2" type="checkbox" name="re" value="re"/>2 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase2" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n3" type="checkbox" name="im" value="im"/>3 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase3" class="sim_slider_inline sim_slider_2" /> </div>
+				  <div><input id="n4" type="checkbox" name="density" value="density" checked />4 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase4" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n5" type="checkbox" name="re" value="re"/>5 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase5" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n6" type="checkbox" name="im" value="im"/>6 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase6" class="sim_slider_inline sim_slider_2" /> </div>
+				  <div><input id="n7" type="checkbox" name="density" value="density" checked />7 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase7" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n8" type="checkbox" name="re" value="re"/>8 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase8" class="sim_slider_inline sim_slider_2" /> </div>
+                  <div><input id="n9" type="checkbox" name="im" value="im"/>9 <input type="range" min="0" max="360" value="0" step="1" id="slider_phase9" class="sim_slider_inline sim_slider_2" /> </div>
+				  <input id="stopped" type="checkbox" name="stopped" value="stopped"/>Running
+				  <div id="sim_mode_draw">
+                  <input id="chDe" type="checkbox" name="density" value="density" checked />|&Psi;|<sup>2</sup>
+                  <input id="chRe" type="checkbox" name="re" value="re"/>Re
+                  <input id="chIm" type="checkbox" name="im" value="im"/>Im
+               </div>
+               </div>
+            </div>
+         </div>
+         <div id="restart" class="hidden">
+            <div class="restart_click">RESTART</div>
+         </div>
+         <div id="psi_form" class="movable"></div>
+      </div>
 
 		</div>
 
 <div class='section options'>
-    <div class="sim_options_params">
-        <div class="sim_options_params_inner">
-            <span class="sim_options_label">n</span><input type="range" min="1" max="10" value="2" step="1" id="reset_n" class="sim_slider" />
-			<span class="sim_options_label">$$\omega$$</span><input type="range" min="1" max="10" value="5" step="1" id="reset_w" class="sim_slider" />
-			<span class="sim_options_label">$$\kappa$$</span><input type="range" min="0" max="10" value="10" step="1" id="reset_k" class="sim_slider" />
-			<span class="sim_options_label">Speed</span><input type="range" min="0" max="50" value="10" step="1" id="reset_speed" class="sim_slider" />
-    </div>
-</div>	
-    <div class="sim_options_params">
-	<div class="sim_options_params_inner">
-		<span id="sim_n_val">$$n=2$$</span>
-		<span id="sim_w_val">$$\frac{5}{2}\cdot \pi^2$$</span>
-		<span id="sim_k_val">$$\kappa=10$$</span>
-	</div>
-</div>
-</div>
-<div class="page-container">
-<div class="section feature-1">
-<div id="chartContainer" style="height: 100%; width:100%;">
-		<canvas id="myChart"></canvas>
-		</div>
-</div>
-
-<div class="section feature-2">
-<div id="chartContainer" style="height: 100%; width:100%;">
-		<canvas id="myChart2"></canvas>
-		</div>
-</div>
-
-<div class="section feature-3">
-<div id="chartContainer" style="height: 100%; width:100%;">
-		<canvas id="myChart3"></canvas>
-		</div>
-</div>
-</div>
-	
+    
+</div>		
 		<script src="js/misc.js "></script>
-		<script src="js/simOfWell.js "></script>
+		<script src="js/InfWellAn.js "></script>
 	</body>
 </html>

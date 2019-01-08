@@ -3,6 +3,27 @@
     flex-wrap: wrap;
 }
 
+#sim_mode_expand {
+	
+	z-index: 2;
+	display:block;
+	height:auto;
+	width: 200px;
+	position: absolute;
+	right:0px;
+	top:128px;
+	background:#181B32;
+	cursor:pointer;
+	margin:0 auto;
+	
+}
+#sim_mode_expand_container {
+	margin: 0 auto;
+	width: 95%;
+	height: 100%;
+	margin: 10px 0 10px 0;
+	
+}
 canvas{
     display: block;
     margin: 0 auto;
@@ -15,11 +36,26 @@ canvas{
 
 #time_elapsed{
 	position: absolute;
-	
+	top: 138px;
 	right:10px;
-	top: 90px;
+	
 	
 }
+
+#psi_form{
+	position: absolute;
+	top: 90px;
+	right:100px;
+	
+	
+}
+
+
+.expand {
+	
+	width: 200px;
+}
+
 
 #mode{
 	z-index: 2;
@@ -27,9 +63,9 @@ canvas{
 	height:48px;
 	width: 80px;
 	position: absolute;
-	left:80px;
+	right:0px;
 	top:80px;
-	background:#181B32;
+	background:#121A32;
 	cursor:pointer;
 	margin:0 auto;
 }
@@ -46,7 +82,7 @@ canvas{
 	height:48px;
 	width: 80px;
 	position: absolute;
-	left:160px;
+	left:80px;
 	top:80px;
 	background:#181B32;
 	cursor:pointer;
@@ -183,51 +219,82 @@ nav {
 }
 
 
-/* The slider itself */
-
 .sim_slider {
+	margin-left: 5%;
+    height: 20px;
     -webkit-appearance: none;
-    /* Override default CSS styles */
     appearance: none;
     width: 90%;
-    margin-left: 5%;
-    height: 20px;
-    /* Specified height */
+   
     background: lightblue;
     outline: none;
     opacity: 0.7;
+	transition: opacity .2s;
     -webkit-transition: .2s;
-    transition: opacity .2s;
+
 }
 
-.sim_slider:hover {
+.sim_mode_expand_label{
+    color: white;
+	font-size: 8px;	
+    display: block;
+    text-align: center;
+    margin: 0 auto;
+	
+}
+
+.sim_slider_2 {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 90% !important;
+	margin-left: 5%;
+	height: 20px;
+	outline: none;
+	opacity: 1;
+	-webkit-transition: .2s;
+	transition: opacity .2s;
+}
+
+.sim_slider_2::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 25px;
+	height: 25px;
+	background: #5995DA;
+	cursor: pointer;
+}
+
+.sim_slider_2::-moz-range-thumb {
+	width: 5px;
+	height: 15px;
+	background: #5995DA;
+	cursor: pointer;
+}
+
+.sim_slider:hover ,.sim_slider_2:hover, .sim_slider_3:hover{
     opacity: 1;
-    /* Fully shown on mouse-over */
 }
 
 .sim_slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    /* Override default look */
     appearance: none;
     width: 25px;
-    /* Set a specific slider handle width */
     height: 25px;
-    /* Slider handle height */
     background: #5995DA;
-    /* Green background */
     cursor: pointer;
-    /* Cursor on hover */
 }
 
 .sim_slider::-moz-range-thumb {
     width: 25px;
-    /* Set a specific slider handle width */
     height: 25px;
-    /* Slider handle height */
     background: #5995DA;
-    /* Green background */
     cursor: pointer;
-    /* Cursor on hover */
+}
+
+
+input[type="range"].sim_slider_inline {
+		width: 70px !important;
+		display:inline;
 }
 
 .sim_options_label {
@@ -253,6 +320,11 @@ nav {
     cursor: pointer;
     opacity: 1;
 }
+#sim_mode_draw{
+	margin: 0 auto;
+	width: 90%;
+	color: white;
+}
 
 .nav_hamburger {
     background-image: url("../images/menu-512.png");
@@ -269,7 +341,7 @@ nav {
 .nav_title {
     position: absolute;
     left: 17.5px;
-    top: 17.5px;
+    top: 25.5px;
     color: white;
     font: 25px arial, sans-serif;
 }

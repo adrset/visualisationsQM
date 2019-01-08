@@ -8,6 +8,9 @@
 			var slidery = document.getElementById("slider_y");
 			var sliderx1 = document.getElementById("slider_x1");
 			var slider = document.getElementById("slider");
+			var chIm = document.getElementById("chIm");
+			var chRe = document.getElementById("chRe");
+			var chDe = document.getElementById("chDe");
 			var stopper = 0;
 
 			var iter = 0;
@@ -33,6 +36,8 @@
 		    var pTotal = 0;
 		    let PI = 3.14159;
 			var rysujeText = ["DENSITY","IMAGINARIS", "REALIS"];
+			
+			var drawing = [1,0,0];
 		    
 
 		   
@@ -44,8 +49,10 @@
 		    var time = 0;
 		    let dt = 0.49;
 		    var ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
-		    var positions = new Float32Array(N * 3); // 3 vertices per point
-		    var positions2 = new Float32Array(N * 3); // 3 vertices per point
+		    var positionsV = new Float32Array(N * 3); // 3 vertices per point
+		    var positionsD = new Float32Array(N * 3); // 3 vertices per point
+			var positionsR = new Float32Array(N * 3); // 3 vertices per point
+			var positionsI = new Float32Array(N * 3); // 3 vertices per point
 		    var V = [];
 		    var imag = [];
 		    var real = [];
@@ -68,17 +75,27 @@
 	        renderer.domElement.addEventListener("mousedown", onMouseDown, true);
 	        renderer.domElement.addEventListener("mouseup", onMouseUp, true);
 
-		    theDiv.style.width = width + 'px';
-		    theDiv.style.height = height + 'px';
+		    //theDiv.style.width = width + 'px';
+		   // theDiv.style.height = height + 'px';
 
 		    $("#mode").removeClass("hidden");
-			document.querySelector(".sim_mode").innerHTML = rysujeText[rysuje]; 
+			document.querySelector(".sim_mode").innerHTML = "Opcje"; 
 			
-			$("#mode").click(function(){
-				rysuje = (rysuje + 1)%3; 	
-			
-				document.querySelector(".sim_mode").innerHTML = rysujeText[rysuje]; 
-
+			var clicker = $("#mode");
+			clicker.click(function(){
+				var theGuy = $("#sim_mode_expand");
+				
+				console.log(value);
+				if( theGuy.hasClass('hidden')){
+					theGuy.removeClass('hidden');
+					var value = theGuy.height();
+					$("#time_elapsed").css("top", "+=" + value);
+				}else {
+					var value = theGuy.height();
+					theGuy.addClass('hidden');
+					$("#time_elapsed").css("top", "-=" + value);
+				}
+				
 			});
 			
 			$("#restart").removeClass("hidden"); 
@@ -137,43 +154,54 @@
 				}    
 			});
 				
-				
 		    var stats = new Stats();
 		    stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
                     
 		    stats.dom.style.position = 'absolute';
 			stats.dom.style.zIndex = '2';
 		    stats.dom.style.top = document.getElementById("nav").clientHeight + 'px';
+			stats.dom.classList.add("movable");
 		    theDiv.appendChild(renderer.domElement);
 		    theDiv.appendChild( stats.dom );
 		    raycaster = new THREE.Raycaster();
 		    raycaster.linePrecision = 20;
 
 		    document.addEventListener('mousemove', onDocumentMouseMove, false);
-
-		    var geometry = new THREE.BufferGeometry();
 			var once = 1;
-		    var geometry2 = new THREE.BufferGeometry();
-
-		    geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-		    geometry2.addAttribute('position', new THREE.BufferAttribute(positions2, 3));
+			
+			
+		    var geometryD = new THREE.BufferGeometry();
+		    var geometryV = new THREE.BufferGeometry();
+			var geometryR = new THREE.BufferGeometry();
+		    var geometryI = new THREE.BufferGeometry();
+			
+		    geometryD.addAttribute('position', new THREE.BufferAttribute(positionsV, 3));
+		    geometryV.addAttribute('position', new THREE.BufferAttribute(positionsD, 3));
+		    geometryR.addAttribute('position', new THREE.BufferAttribute(positionsR, 3));
+		    geometryI.addAttribute('position', new THREE.BufferAttribute(positionsI, 3));
 
 		    // draw range
 		    var drawCount = N; // draw the first 2 points, only
-		    geometry.setDrawRange(0, drawCount);
-		    geometry2.setDrawRange(0, drawCount);
-
-		    // material
-		    var material = new THREE.LineBasicMaterial({ color: vColor, linewidth: 2 });
-		    // material
-		    var material2 = new THREE.LineBasicMaterial({ color: 0xaa00fd, linewidth: 2 });
-
-		    // line
-		    var line = new THREE.Line(geometry, material);
-		    var line2 = new THREE.Line(geometry2, material2);
-		    scene.add(line);
-		    scene.add(line2);
+		    geometryD.setDrawRange(0, drawCount);
+		    geometryV.setDrawRange(0, drawCount);
+		    geometryR.setDrawRange(0, drawCount);
+		    geometryI.setDrawRange(0, drawCount);
 			
+		    // material
+		    var materialD = new THREE.LineBasicMaterial({ color: 0xff0505, linewidth: 2 });
+		    var materialV = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+			var materialR = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
+		    var materialI = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+  
+		    // line
+		    var lineV = new THREE.Line(geometryD, materialD);
+		    var lineD = new THREE.Line(geometryV, materialV);
+			var lineR = new THREE.Line(geometryR, materialR);
+		    var lineI = new THREE.Line(geometryI, materialI);
+		    scene.add(lineV);
+		    scene.add(lineD);
+			scene.add(lineR);
+		    scene.add(lineI);		
 		    var whichClicked = 0;
 
 		    addListeners();
@@ -186,16 +214,39 @@
 			    stats.begin();
 		            for (var i = 0; i < updatesPerFrame - 1; i++) {
 		                leapFrog();
-
+						time += dt;
 		            }
 					document.getElementById("time_elapsed").innerHTML= 'Czas: ' + parseInt(time) + 'ps'; 
 					document.getElementById("sim_alpha_val").innerHTML= ra
 		            requestAnimationFrame(animate);
 
 		            updatePositions();
+					
+					
+					//! ! 
+					
+					if(drawing[0] == 1){
+						lineD.visible = true;
+					}else{
+						lineD.visible = false;
+					}	
+					
+					if(drawing[1] == 1){
+						lineR.visible = true;
+					}else{
+						lineR.visible = false;
+					}	
+					
+					if(drawing[2] == 1){
+						lineI.visible = true;
+					}else{
+						lineI.visible = false;
+					}
 
-		            line.geometry.attributes.position.needsUpdate = true;
-		            line2.geometry.attributes.position.needsUpdate = true;
+		            lineV.geometry.attributes.position.needsUpdate = true;
+		            lineD.geometry.attributes.position.needsUpdate = true;
+					lineR.geometry.attributes.position.needsUpdate = true;
+					lineI.geometry.attributes.position.needsUpdate = true;
 		            renderer.render(scene, camera);
 		            render();
 		            var t1 = performance.now();
@@ -220,8 +271,8 @@
 		    function render() {
 
 		        raycaster.setFromCamera(mouse, camera);
-
-		        var intersects = raycaster.intersectObjects([line], true);
+				
+		        var intersects = raycaster.intersectObjects([lineV], true);
 		        if (intersects.length > 0) {
 		            $('html,body').css('cursor', 'pointer');
 			    changePotential(1);
@@ -349,48 +400,51 @@
 
 				}
 
-		        var positions = line.geometry.attributes.position.array;
-		        var positions2 = line2.geometry.attributes.position.array;
+		        var positionsV = lineV.geometry.attributes.position.array;
+		        var positionsD = lineD.geometry.attributes.position.array;
 
 		        var index = 3,
-		            index2 = 3;
+		            index2 = 3, index3 = 3, index4 = 3;
 		        // set values on the borders
 		        {
-		            positions[0] = -width / 2;
-		            positions[1] = 0;
+		            positionsV[0] = -width / 2;
+		            positionsV[1] = 0;
 		           // positions[2] = 0;
-		            positions2[0] = -width / 2;
-		            positions2[1] = 0;
-		          //  positions2[2] = 0;
+		            positionsD[0] = -width / 2;
+		            positionsD[1] = 0;
+		          //  positionsD[2] = 0;
 
-		            positions[3 * N - 3] = -width / 2 + (N - 1) / ratio;
-		            positions[3 * N - 2] = 0;
-		            positions[3 * N - 1] = 0;
-		            positions2[3 * N - 3] = -width / 2 + (N - 1) / ratio;
-		            positions2[3 * N - 2] = 0;
-		            positions2[3 * N - 1] = 0;
+		            positionsV[3 * N - 3] = -width / 2 + (N - 1) / ratio;
+		            positionsV[3 * N - 2] = 0;
+		            positionsV[3 * N - 1] = 0;
+		            positionsD[3 * N - 3] = -width / 2 + (N - 1) / ratio;
+		            positionsD[3 * N - 2] = 0;
+		            positionsD[3 * N - 1] = 0;
 		        }
-		        line.material.color.setHex(vColor);
+		        lineV.material.color.setHex(vColor);
 		        leapFrog();
 
 		        for (var i = 0; i < N ; i++) {
 
-		            positions[index++] = -width / 2 + i / ratio;
-		            positions[index++] = multiplier * V[i];
-		            positions[index++] = 0;
+		            positionsV[index++] = -width / 2 + i / ratio;
+		            positionsV[index++] = multiplier * V[i];
+		            positionsV[index++] = 0;
 
-		            positions2[index2++] = -width / 2 + i / ratio;
-		            if (rysuje == 0) {
-		                positions2[index2++] = multiplier * (imag[i] * imag[i] + real[i] * real[i]);
-		                line2.material.color.setHex(0xff0505);
-		            } else if (rysuje == 1) {
-		                positions2[index2++] = multiplier / 4 * (imag[i]);
-		                line2.material.color.setHex(0xf4e107);
-		            } else if (rysuje == 2) {
-		                line2.material.color.setHex(0x45e506);
-		                positions2[index2++] = multiplier / 4* (real[i]);
-		            }
-		            positions2[index2++] = 0;
+					
+					// DENSITY
+		            positionsD[index2++] = -width / 2 + i / ratio;
+		            positionsD[index2++] = multiplier / 10 * Math.sqrt(imag[i] * imag[i] + real[i] * real[i]);
+		            positionsD[index2++] = 0;
+					
+					// REALIS
+		            positionsR[index3++] = -width / 2 + i / ratio;
+		            positionsR[index3++] = multiplier / 4* (real[i]);
+		            positionsR[index3++] = 0;
+					
+					// IMAGINARIS
+		            positionsI[index4++] = -width / 2 + i / ratio;
+		            positionsI[index4++] = multiplier / 4* (imag[i]);
+		            positionsI[index4++] = 0;
 
 		        }
 
@@ -398,27 +452,49 @@
 		    }
 
 		    function onWindowResize(){
-			
+				camera.aspect =  document.getElementById("canvas").clientWidth / height;
+				camera.updateProjectionMatrix();
+				renderer.setSize( document.getElementById("canvas").clientWidth, height );
 
 			}
 
 		    function leapFrog() {
 		        // imag[0] = -imag[2];
 		        // imag[N - 1] = -imag[N - 3];
+				
+				var delta_i = 0;
+				var delta_r = 0;
+				
 		        for (var i = 1; i < N-1	; i++) {
-					
-					real[i] += -ra * (imag[i + 1] - 2 * imag[i] + imag[i - 1]) + (dt / h) * V[i] * imag[i];
+					delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					delta_r = real[i + 1] - 2 * real[i] + real[i - 1]
+					real[i] += -ra * (delta_i) + (dt / h) * V[i] * imag[i];
 					
 		        }
 		        
 		        for (var i = 1; i < N-1; i++) {
-					
-					imag[i] += ra * (real[i + 1] - 2 * real[i] + real[i - 1]) - (dt / h) * V[i] * real[i];
+					delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					delta_r = real[i + 1] - 2 * real[i] + real[i - 1]
+					imag[i] += ra * (delta_r) - (dt / h) * V[i] * real[i];
 					
 		            
 		        }
 
 		    }
+			
+			function gammaR(x){
+				let sig = getSigma(x);
+				return (1+Math.sqrt(2) * sig) / ((sig * (sig+Math.sqrt(2)) + 1)^2);
+			}
+			
+			function gammaI(x){
+				let sig = getSigma(x);
+				return (- sig*Math.sqrt(2) - sig*sig) / ((sig * (sig+Math.sqrt(2)) + 1)^2);
+			}
+			
+			function getSigma(x){
+				return 0.005 * (x - 50)^2;
+			}
 
 		    function onDocumentMouseMove(event) {
 		        //event.preventDefault();
@@ -449,9 +525,9 @@
 		        time = 0;
 				pTotal = 0;
 		        for (var i = 0; i < N ; i++) {
-		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma * Math.sqrt(2))), 2)) * Math.cos(K * ((i - nc)/ratio));
-		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma * Math.sqrt(2))), 2)) * Math.sin(K * ((i - nc)/ratio));
-		            //pos[i] = dx * i;
+		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.cos(K * ((i - nc)/ratio));
+		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.sin(K * ((i - nc)/ratio));
+		            pos[i] = dx * i;
 		            pTotal = pTotal + Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
 
@@ -623,11 +699,36 @@
 
 		        sliderUpf.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
-		            updatesPerFrame = (target.value);
-					
+		            updatesPerFrame = (target.value);	
 					clearData(myChart);
-		            setup();
 		        });
+				
+				chDe.addEventListener( "change", 
+				function(){
+					if (this.checked) {
+						drawing[0] = 1;
+					}else{
+						drawing[0] = 0;
+					}
+				});
+				
+				chRe.addEventListener( "change", 
+				function(){
+					if (this.checked) {
+						drawing[1] = 1;
+					}else{
+						drawing[1] = 0;
+					}
+				});
+				
+				chIm.addEventListener( "change", 
+				function(){
+					if (this.checked) {
+						drawing[2] = 1;
+					}else{
+						drawing[2] = 0;
+					}
+				});
 		     
 
 		    }
@@ -661,6 +762,8 @@
 				slidery.value = kk;
 				
 			}
+			
+			
 		
 			
 
