@@ -3,30 +3,183 @@
     flex-wrap: wrap;
 }
 
-#sim_mode_expand {
-	
-	z-index: 2;
-	display:block;
-	height:auto;
-	width: 200px;
-	position: absolute;
-	right:0px;
-	top:128px;
-	background:#181B32;
-	cursor:pointer;
-	margin:0 auto;
-	
+html,body{
+	height:100%;
 }
-#sim_mode_expand_container {
-	margin: 0 auto;
-	width: 95%;
-	height: 100%;
-	margin: 10px 0 10px 0;
+
+@media only screen and (max-width: 960px) {
+	.options,
+    .feature-1,
+    .feature-2,
+    .feature-3 {
+        width: 100%;
+    }
 	
+	#time_elapsed, #psi_form{
+		position: absolute;
+		top: 138px;
+		right:10px;
+	}
+	
+	.nav_hamburger {
+		background-image: url("../images/menu-512.png");
+		background-size: contain;
+		width: 60px;
+		height: 60px;
+		cursor: pointer;
+		position: absolute;
+		top: 10px;
+		right: 0px;
+		cursor: pointer;
+	}
+
+    #sim_mode_expand {
+		z-index: 2;
+		display:block;
+		height:auto;
+		min-width: 200px;
+		width:auto;
+		position: absolute;
+		right:0px;
+		top:128px;
+		background:lightgrey;
+		cursor:pointer;
+		margin:0 auto;
+	
+	}
+	
+	#psi_n_levels{
+		height: 500px;
+		overflow:auto;
+	}
+	
+	input[type="range"].sim_slider_inline {
+		width: 90% !important;
+		margin-left: 5%;
+		display:inline;
+	}
+	
+	.nav_desktop{
+		display:none;
+	}
+	
+	.block_desktop {
+		display:inline;
+		
+	}
+	.hidden_mobile{
+		visibility:hidden;
+	}
+	
+	.hidden_desktop{
+		display:block;
+	}
+	#canvas_holder{
+		height:500px;
+		width:100%;
+		position:absolute;
+		left:0px;
+	}
+	
+	#canvas {
+		width: 100%;
+		height: 500px;
+		margin-left: 0;
+	}
+	
+	#sim_mode_expand_container {
+		margin: 0 auto;
+		width: 95%;
+		height: 100%;
+		margin: 10px 0 10px 0;
+	
+	}
 }
+
+@media only screen and (min-width: 961px) {
+	#time_elapsed, #psi_form{
+		position: absolute;
+		top: 80px;
+		right:22%;
+	}
+	
+	.nav_desktop_item_a {
+		color:white;
+	}
+	
+	.nav_hamburger {
+		display: none;
+	}
+	
+	.nav_desktop{
+		display:block;
+		float: right;
+		margin-top: 30px;
+		margin-right:20px;
+	}
+	.feature-1,
+    .feature-2,
+    .feature-3 {
+        width: 33.33%;
+    }
+	
+	.hidden_mobile{
+		visibility:visible;
+	}
+	
+	.hidden_desktop{
+		display:none;
+	}
+
+	input[type="range"].sim_slider_inline {
+			width: 30% !important;
+			display:inline;
+			
+	}
+	.block_desktop {
+			display:block;
+		
+	}
+	
+	#canvas {
+		width: 100%;
+		height: 700px;
+		margin-left: 0;
+	}
+	
+	#sim_mode_expand {
+		overflow: auto;
+		z-index: 2;
+		display:block;
+		height:700px;
+		width:20%;
+		position: absolute;
+		right:0px;
+		
+		background:lightgrey;
+		cursor:pointer;
+		margin:0 auto;
+		
+	}
+
+	#canvas_holder{
+		height:700px;
+		width:80%;
+		position:absolute;
+		left:0px;
+	}
+	
+	#sim_mode_expand_container {
+		margin: 0 auto;
+		width: 95%;
+		margin: 10px 0 10px 0;
+		
+	}
+}
+
 canvas{
     display: block;
-    margin: 0 auto;
+    width:80%;
 	z-index:1;
 }
 
@@ -34,25 +187,7 @@ canvas{
 	z-index:3;
 }
 
-#time_elapsed{
-	position: absolute;
-	top: 138px;
-	right:10px;
-	
-	
-}
-
-#psi_form{
-	position: absolute;
-	top: 90px;
-	right:100px;
-	
-	
-}
-
-
 .expand {
-	
 	width: 200px;
 }
 
@@ -141,7 +276,7 @@ canvas{
 }
 
 .options {
-    background-color: #5995FF;
+    background-color: #bababa;
 	height:auto;
 	min-height:200px;
 }
@@ -159,27 +294,6 @@ canvas{
 }
 
 
-/* Mobile Styles */
-
-@media only screen and (max-width: 960px) {
-    .options,
-    .feature-1,
-    .feature-2,
-    .feature-3 {
-        width: 100%;
-    }
-}
-
-
-/* Desktop Styles */
-
-@media only screen and (min-width: 961px) {
-    .feature-1,
-    .feature-2,
-    .feature-3 {
-        width: 33.33%;
-    }
-}
 
 body {
     margin: 0;
@@ -201,14 +315,6 @@ nav {
     margin-top: 3%;
     height: 94%;
     width: 95%;
-}
-
-#canvas {
-    width: 100%;
-    min-height:700px;
-    height: 100%;
-    float: left;
-    margin-left: 0;
 }
 
 #options {
@@ -235,8 +341,8 @@ nav {
 }
 
 .sim_mode_expand_label{
-    color: white;
-	font-size: 8px;	
+    color: black;
+	font-size: 12px;	
     display: block;
     text-align: center;
     margin: 0 auto;
@@ -292,16 +398,17 @@ nav {
 }
 
 
-input[type="range"].sim_slider_inline {
-		width: 70px !important;
-		display:inline;
-}
+
 
 .sim_options_label {
     color: white;
     display: block;
     text-align: center;
     margin: 0 auto;
+}
+
+.table{
+	text-align:center;
 }
 
 .sim_options_button {
@@ -323,19 +430,7 @@ input[type="range"].sim_slider_inline {
 #sim_mode_draw{
 	margin: 0 auto;
 	width: 90%;
-	color: white;
-}
-
-.nav_hamburger {
-    background-image: url("../images/menu-512.png");
-    background-size: contain;
-    width: 60px;
-    height: 60px;
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 0px;
-    cursor: pointer;
+	color: black;
 }
 
 .nav_title {
@@ -344,4 +439,9 @@ input[type="range"].sim_slider_inline {
     top: 25.5px;
     color: white;
     font: 25px arial, sans-serif;
+}
+
+ a.nav_title,a.nav_title:visited,a.nav_title:hover,a.nav_title:active{
+    color: white;
+	text-decoration:none;
 }

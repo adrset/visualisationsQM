@@ -16,39 +16,43 @@
 			var iter = 0;
 		    var rysuje = 0;
 		    var K = 0.157;
-		    var width = document.getElementById("canvas").clientWidth;
+		    var width = document.getElementById("canvas_holder").clientWidth;
 		    var currentPreset = 0;
 		    var mouseDr = {};
 
 		    var mouseDown = 0;
 		    let N = 1600;
-		    let h = 1;
-		    let mass = 1;
-		    let deltax = 1;
+		    let h = 1.054e-34;
+		    let mass = 9.1e-31;
+		    let deltax = .1e-9;
 			var upf = 10;
 		    var updatesPerFrame = 30;
 		    var mouse = new THREE.Vector2();
 		    var mouseOld = new THREE.Vector2();
 	        var ratio = N / width;  
 		    let dx = deltax * 1e9;
-		    let sigma = 50 ;
-		    let nc = 200;
+		    let sigma = 40;
+		    let nc = 400;
 		    var pTotal = 0;
 		    let PI = 3.14159;
 			var rysujeText = ["DENSITY","IMAGINARIS", "REALIS"];
 			
-			var drawing = [1,0,0];
+			var drawing = [1,0,0,0];
 		    
-
-		   
+			chIm.checked = false;
+			chRe.checked = false;
+			
+		    var PML_width = 100;
 		    let height = 700;
 		    var x1 = 790/ratio;
 		    var x2 = 800/ratio;
-		    var multiplier = 12000;
-		    var y = 0.1;
+		    var multiplier = 10000;
+			var ev =  1.6e-19;
+			var oneoverev = 1/ ev;
+		    var y = 0.05;
 		    var time = 0;
-		    let dt = 0.49;
-		    var ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
+		    let dt = 2e-17;
+		    var ra = 0.1;
 		    var positionsV = new Float32Array(N * 3); // 3 vertices per point
 		    var positionsD = new Float32Array(N * 3); // 3 vertices per point
 			var positionsR = new Float32Array(N * 3); // 3 vertices per point
@@ -59,7 +63,7 @@
 		    var sum = [];
 		    var pos = [];
 		    var vColor = 0x00000;
-
+			var lambda = 50;
 		    setup();
 
 
@@ -71,12 +75,10 @@
 
 		    var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		    renderer.setSize(width, height);
-		    var theDiv = document.getElementById("canvas");
+		    var theDiv = document.getElementById("canvas_holder");
 	        renderer.domElement.addEventListener("mousedown", onMouseDown, true);
 	        renderer.domElement.addEventListener("mouseup", onMouseUp, true);
 
-		    //theDiv.style.width = width + 'px';
-		   // theDiv.style.height = height + 'px';
 
 		    $("#mode").removeClass("hidden");
 			document.querySelector(".sim_mode").innerHTML = "Opcje"; 
@@ -85,14 +87,14 @@
 			clicker.click(function(){
 				var theGuy = $("#sim_mode_expand");
 				
-				console.log(value);
-				if( theGuy.hasClass('hidden')){
-					theGuy.removeClass('hidden');
+				console.log(theGuy);
+				if( theGuy.hasClass("hidden_mobile")){
+					theGuy.removeClass("hidden_mobile");
 					var value = theGuy.height();
 					$("#time_elapsed").css("top", "+=" + value);
 				}else {
 					var value = theGuy.height();
-					theGuy.addClass('hidden');
+					theGuy.addClass("hidden_mobile");
 					$("#time_elapsed").css("top", "-=" + value);
 				}
 				
@@ -159,14 +161,16 @@
                     
 		    stats.dom.style.position = 'absolute';
 			stats.dom.style.zIndex = '2';
-		    stats.dom.style.top = document.getElementById("nav").clientHeight + 'px';
-			stats.dom.classList.add("movable");
+		    stats.dom.style.top = 0 + 'px';
+		    //stats.dom.classList.add("movable");
+			renderer.domElement.style.position = 'absolute';
+			renderer.domElement.style.top = 0 + 'px';
 		    theDiv.appendChild(renderer.domElement);
 		    theDiv.appendChild( stats.dom );
 		    raycaster = new THREE.Raycaster();
 		    raycaster.linePrecision = 20;
-
-		    document.addEventListener('mousemove', onDocumentMouseMove, false);
+			chDeSq.checked = false;
+		    renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 			var once = 1;
 			
 			
@@ -175,8 +179,8 @@
 			var geometryR = new THREE.BufferGeometry();
 		    var geometryI = new THREE.BufferGeometry();
 			
-		    geometryD.addAttribute('position', new THREE.BufferAttribute(positionsV, 3));
-		    geometryV.addAttribute('position', new THREE.BufferAttribute(positionsD, 3));
+		    geometryV.addAttribute('position', new THREE.BufferAttribute(positionsV, 3));
+		    geometryD.addAttribute('position', new THREE.BufferAttribute(positionsD, 3));
 		    geometryR.addAttribute('position', new THREE.BufferAttribute(positionsR, 3));
 		    geometryI.addAttribute('position', new THREE.BufferAttribute(positionsI, 3));
 
@@ -188,14 +192,14 @@
 		    geometryI.setDrawRange(0, drawCount);
 			
 		    // material
-		    var materialD = new THREE.LineBasicMaterial({ color: 0xff0505, linewidth: 2 });
-		    var materialV = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+		    var materialD = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+		    var materialV = new THREE.LineBasicMaterial({ color: 0xff0505, linewidth: 2 });
 			var materialR = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
 		    var materialI = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
   
 		    // line
-		    var lineV = new THREE.Line(geometryD, materialD);
-		    var lineD = new THREE.Line(geometryV, materialV);
+		    var lineV = new THREE.Line(geometryV, materialV);
+		    var lineD = new THREE.Line(geometryD, materialD);
 			var lineR = new THREE.Line(geometryR, materialR);
 		    var lineI = new THREE.Line(geometryI, materialI);
 		    scene.add(lineV);
@@ -213,10 +217,13 @@
 		        if (stopper != 1) {
 			    stats.begin();
 		            for (var i = 0; i < updatesPerFrame - 1; i++) {
-		                leapFrog();
 						time += dt;
+		                leapFrog();
+						
 		            }
-					document.getElementById("time_elapsed").innerHTML= 'Czas: ' + parseInt(time) + 'ps'; 
+					
+					
+					document.getElementById("time_elapsed").innerHTML= 'Czas: ' + parseInt(time*1e15) + 'fs'; 
 					document.getElementById("sim_alpha_val").innerHTML= ra
 		            requestAnimationFrame(animate);
 
@@ -225,7 +232,7 @@
 					
 					//! ! 
 					
-					if(drawing[0] == 1){
+					if(drawing[0] == 1 || drawing[3] == 1){
 						lineD.visible = true;
 					}else{
 						lineD.visible = false;
@@ -251,7 +258,6 @@
 		            render();
 		            var t1 = performance.now();
 		            //console.log(1/((t1-t0)));
-		            time += dt;
 					stats.end();
 		        }
 
@@ -397,8 +403,11 @@
 		    function updatePositions() {
 				if(iter++%20 == 0){
 					addData(myChart, "", {x: iter/10, y:calculateNorm()});
-
+					
 				}
+				
+				if(calculateNorm()<0.9)
+					setup();
 
 		        var positionsV = lineV.geometry.attributes.position.array;
 		        var positionsD = lineD.geometry.attributes.position.array;
@@ -412,6 +421,10 @@
 		           // positions[2] = 0;
 		            positionsD[0] = -width / 2;
 		            positionsD[1] = 0;
+					positionsR[0] = -width / 2;
+		            positionsR[1] = 0;
+					positionsI[0] = -width / 2;
+		            positionsI[1] = 0;
 		          //  positionsD[2] = 0;
 
 		            positionsV[3 * N - 3] = -width / 2 + (N - 1) / ratio;
@@ -420,6 +433,12 @@
 		            positionsD[3 * N - 3] = -width / 2 + (N - 1) / ratio;
 		            positionsD[3 * N - 2] = 0;
 		            positionsD[3 * N - 1] = 0;
+					positionsR[3 * N - 3] = -width / 2 + (N - 1) / ratio;
+		            positionsR[3 * N - 2] = 0;
+		            positionsR[3 * N - 1] = 0;
+					positionsI[3 * N - 3] = -width / 2 + (N - 1) / ratio;
+		            positionsI[3 * N - 2] = 0;
+		            positionsI[3 * N - 1] = 0;
 		        }
 		        lineV.material.color.setHex(vColor);
 		        leapFrog();
@@ -427,13 +446,17 @@
 		        for (var i = 0; i < N ; i++) {
 
 		            positionsV[index++] = -width / 2 + i / ratio;
-		            positionsV[index++] = multiplier * V[i];
+		            positionsV[index++] = multiplier/4 * oneoverev *  V[i];
 		            positionsV[index++] = 0;
 
 					
 					// DENSITY
 		            positionsD[index2++] = -width / 2 + i / ratio;
-		            positionsD[index2++] = multiplier / 10 * Math.sqrt(imag[i] * imag[i] + real[i] * real[i]);
+					if(drawing[0] == 1 ){
+						positionsD[index2++] = multiplier / 4 * (imag[i] * imag[i] + real[i] * real[i]);
+					}else if(drawing[3] == 1){
+						positionsD[index2++] = multiplier / 4 * Math.sqrt(imag[i] * imag[i] + real[i] * real[i]);
+					}
 		            positionsD[index2++] = 0;
 					
 					// REALIS
@@ -452,9 +475,9 @@
 		    }
 
 		    function onWindowResize(){
-				camera.aspect =  document.getElementById("canvas").clientWidth / height;
+				camera.aspect =  document.getElementById("canvas_holder").clientWidth / height;
 				camera.updateProjectionMatrix();
-				renderer.setSize( document.getElementById("canvas").clientWidth, height );
+				renderer.setSize( document.getElementById("canvas_holder").clientWidth, height );
 
 			}
 
@@ -462,22 +485,42 @@
 		        // imag[0] = -imag[2];
 		        // imag[N - 1] = -imag[N - 3];
 				
-				var delta_i = 0;
-				var delta_r = 0;
-				
-		        for (var i = 1; i < N-1	; i++) {
-					delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
-					delta_r = real[i + 1] - 2 * real[i] + real[i - 1]
+				for (let i = 1; i < PML_width+1; i++) {
+					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
+					real[i] += -ra * (delta_i*gammaR(i) + delta_r * gammaI(i)) + (dt / h) * V[i] * imag[i];
+					
+		        }
+		        for (let i = PML_width+1; i < N-(PML_width+1); i++) {
+					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
 					real[i] += -ra * (delta_i) + (dt / h) * V[i] * imag[i];
 					
 		        }
-		        
-		        for (var i = 1; i < N-1; i++) {
-					delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
-					delta_r = real[i + 1] - 2 * real[i] + real[i - 1]
-					imag[i] += ra * (delta_r) - (dt / h) * V[i] * real[i];
+				
+				for (let i = N-(PML_width+1); i < N-1; i++) {
+					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
+					real[i] += -ra * (delta_i*gammaR(i) + delta_r * gammaI(i)) + (dt / h) * V[i] * imag[i];
 					
-		            
+		        }
+		         for (let i = 1; i < PML_width+1; i++) {
+					
+					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
+					 
+					imag[i] += ra * (delta_r * gammaR(i) - delta_i * gammaI(i)) - (dt / h) * V[i] * real[i];		            
+		        }
+		        for (let i = PML_width+1; i < N-(PML_width+1); i++) {
+					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
+					imag[i] += ra * (delta_r) - (dt / h) * V[i] * real[i];		         
+		        }
+				
+				 for (let i = N-(PML_width+1); i < N-(PML_width+1); i++) {
+					
+					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
+					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
+					 
+					imag[i] += ra * (delta_r * gammaR(i) - delta_i * gammaI(i)) - (dt / h) * V[i] * real[i];		            
 		        }
 
 		    }
@@ -493,12 +536,12 @@
 			}
 			
 			function getSigma(x){
-				return 0.005 * (x - 50)^2;
+				return 0.005 * ((x - PML_width)*dx)^2;
 			}
 
 		    function onDocumentMouseMove(event) {
 		        //event.preventDefault();
-		        // TODO: use mouse cords only inside canvas!
+		        
 		        const rect = theDiv.getBoundingClientRect();
 		        if (event.clientX > rect.x && event.clientX < rect.x + rect.width) {
 
@@ -510,9 +553,9 @@
 				mouseOld.x = mouse.x;
 				mouseOld.y = mouse.y;
 
-		                mouse.x = ((event.clientX - rect.x) / width) * 2 - 1;
+		                mouse.x = ((event.clientX - rect.x) / document.getElementById("canvas_holder").clientWidth) * 2 - 1;
 		                mouse.y = -((event.clientY - rect.y) / height) * 2 + 1;
-		                
+		               
 		            }
 		        }
 
@@ -525,8 +568,8 @@
 		        time = 0;
 				pTotal = 0;
 		        for (var i = 0; i < N ; i++) {
-		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.cos(K * ((i - nc)/ratio));
-		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.sin(K * ((i - nc)/ratio));
+		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.cos(2*Math.PI/ lambda * ((i - nc)/ratio));
+		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.sin(2*Math.PI/ lambda * ((i - nc)/ratio));
 		            pos[i] = dx * i;
 		            pTotal = pTotal + Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
@@ -545,7 +588,10 @@
 		            imag[i] /= norm;
 		            pTotal += Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
-
+				if(1){
+						
+						console.log(Math.max(...real));
+					}
 		    }
 
 		    function resetPotential() {
@@ -557,18 +603,18 @@
 				if(currentPreset == 0){
 
 					for (var i = parseInt(x1*ratio); i < parseInt(x2*ratio); i++) {
-						V[i] = y * 0.2;
+						V[i] = y * ev;
 					}
 				}else if(currentPreset == 1){
 			
 					for (var i = parseInt(x2*ratio); i < N; i++) {
-						V[i] = y * 0.2;
+						V[i] = y * ev;
 					}
 					
 				}else if(currentPreset == 2){
 					
 					for (var i = 0; i < N; i++) {
-						V[i] = y * 0.2;
+						V[i] = y * ev;
 					}
 					for (var i = parseInt(x1*ratio); i < parseInt(x2*ratio); i++) {
 						V[i] = 0;
@@ -577,7 +623,7 @@
 				}else if(currentPreset == 3){
 					
 					for (var i = 0; i < N; i++) {
-						V[i] = y * 0.2;
+						V[i] = y * ev;
 					}
 					for (var i = parseInt(x1*ratio); i < parseInt(x2*ratio); i++) {
 						V[i] = 0;
@@ -597,7 +643,7 @@
 
 		        slider.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
-		            K = (target.value);
+		            lambda = 1/(target.value);
 					clearData(myChart);
 		            console.log(target.value);
 		            setup();
@@ -606,7 +652,7 @@
 		        sliderx1.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            if (target.value < x2)
-		                x1 = (target.value);
+		                x1 = (target.value)/ratio;
 		            else {
 		                x1 = x2 - 5;
 		                target.value = x2 - 5;
@@ -625,7 +671,7 @@
 		        sliderx2.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            if (target.value > x1)
-		                x2 = (target.value);
+		                x2 = (target.value)/ratio;
 		            else {
 		                x2 = x1 + 5;
 		                target.value = x1 + 5;
@@ -693,7 +739,6 @@
 		            dt = (target.value);
 					ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
 					clearData(myChart);
-					setK(1);
 		            setup();
 		        });
 
@@ -707,8 +752,25 @@
 				function(){
 					if (this.checked) {
 						drawing[0] = 1;
+						drawing[3] = 0;
+						chDeSq.checked = false;
 					}else{
 						drawing[0] = 0;
+						drawing[3] = 1;
+						chDeSq.checked = true;
+					}
+				});
+				
+				chDeSq.addEventListener( "change", 
+				function(){
+					if (this.checked) {
+						drawing[0] = 0;
+						drawing[3] = 1;
+						chDe.checked = false;
+					}else{
+						drawing[0] = 1;
+						drawing[3] = 0;
+						chDe.checked = true;
 					}
 				});
 				
@@ -734,7 +796,7 @@
 		    }
 			
 			function setK(kk){
-				K = kk
+				lambda = 1/kk
 				slider.value = kk;
 				
 			}
