@@ -22,24 +22,26 @@
 		 <div style="cursor:pointer; " class="nav_desktop">
 			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="index.html">Home</a></span>
 			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="well.html">Nieskończona studnia potencjału</a></span>
-			<span class="nav_desktop_item">Skończona studnia potencjału</span>
-			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="gauss.html">Rozpraszanie paczki Gaussa</a></span>
+			<span class="nav_desktop_item">Skończona studnia potencjału</a></span>
+			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="gauss.html">Rozpraszanie paczki Gaussa</span>
 					 
 		 </div>
 		
 		</div>
 		
 		<div id="menu_container" class="section header hidden">
+		 <div class="nav_desktop"><a href="index.html" >Home</a>Nieskończona studnia<a href="well2.html">Studnia</a><a href="gauss.html" >Ewolucja Paczki</a></div>
+
 			<table class="table table-striped ">
 				 <tbody>
                <tr>
                   <td><a href="index.html" >Home</a></td>
                </tr>
                <tr>
-                  <td><a href="well.html">Nieskończona studnia potencjału</a></td>
+                  <td>Nieskończona studnia potencjału</td>
                </tr>
                <tr>
-                  <td>Skończona studnia potencjału</td>
+                  <td><a href="well2.html">Skończona studnia potencjału</a></td>
                </tr>
                <tr>
                   <td><a href="gauss.html" >Rozpraszanie paczki Gaussa</a></td>
@@ -48,22 +50,27 @@
 			</table>
 				
 		</div>
-		<div class='section content'>
+
 			      <div id="canvas" class="section">
+				  <div id="canvas_holder" class=""></div>
          <div id="mode" class="hidden movable">
             <div class="sim_mode"></div>
          </div>
-         <div id="sim_mode_expand" class="hidden movable">
+         <div id="sim_mode_expand" class="hidden_mobile">
             <div id="sim_mode_expand_container">
-               <span class="sim_mode_expand_label">Ktore rozwiazania</span>
+               <span class="sim_mode_expand_label">n   faza     amplituda</span>
                <div id="sim_mode_draw">
-                  <div id="psi_n_levels"></div>
-				  <input id="stopped" type="checkbox" name="stopped" value="stopped"/>Running
-				  <div id="sim_mode_draw">
+                  <div id="psi_n_levels" class="hidden_desktop" ></div>
+				  <input id="running" type="checkbox" name="stopped" value="stopped"/>Ewolucja
+				 
                   <input id="chDe" type="checkbox" name="density" value="density" checked />|&Psi;|<sup>2</sup>
-                  <input id="chRe" type="checkbox" name="re" value="re"/>Re
-                  <input id="chIm" type="checkbox" name="im" value="im"/>Im
-				  <button id="triangle">Trójkąt</button>
+                  <input id="chRe" type="checkbox" name="re" value="re"/>Fala
+				  <input id="chGrid" type="checkbox" name="density" value="density" checked />Siatka
+				  <span class="sim_mode_expand_label">Szybkość</span><input type="range" min="0" max="0.005" value="0.001" step="0.00001" id="slider_time" class="sim_slider_2" />
+			<div >
+				  <button id="triangle" class="block_desktop">Trójkąt</button>
+				  <button id="clearer" class="block_desktop">Wyczyść</button>
+				  <button id="rescale" class="block_desktop">Przeskaluj</button>
                </div>
                </div>
             </div>
@@ -74,12 +81,13 @@
          <div id="psi_form" class="movable"></div>
       </div>
 
-		</div>
+	
 
 <div class='section options'>
     
 </div>		
 		<script src="js/misc.js "></script>
 		<script src="js/FinWellAn.js "></script>
+		<script src="js/misc.js "></script>
 	</body>
 </html>

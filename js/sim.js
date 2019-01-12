@@ -629,9 +629,9 @@
 						V[i] = 0;
 					}
 					
-					V[N/2 - 1] = y * 0.2;
-					V[N/2 ] = y * 0.2;
-					V[N/2 + 1] = y * 0.2;
+					V[N/2 - 1] = y * ev;
+					V[N/2 ] = y * ev;
+					V[N/2 + 1] = y * ev;
 					
 				}
 					
@@ -736,7 +736,7 @@
 				
 		        sliderDt.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
-		            dt = (target.value);
+		            dt = parseFloat(target.value)*1e-17;
 					ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
 					clearData(myChart);
 		            setup();

@@ -24,6 +24,7 @@ class Simulation {
 		this.time = 0;
 		this.run = 1;
 		this.old = "";
+		this.timeAdd = 0.001;
 		this.phases = new Array(this.levels);
 		this.amp = new Array(this.levels);
 		this.enabled = new Array(this.levels);
@@ -70,7 +71,8 @@ class Simulation {
 			}
 		}
 		if(this.run == 1){
-			this.time+=0.001;
+			this.time+=parseFloat(this.timeAdd);
+			
 		}
 		toAnnounce = toAnnounce.substring(0, toAnnounce.length - 2);
 		//toAnnounce+= '}$$';
@@ -146,6 +148,8 @@ class RenderIt{
 		this.raycaster = null;
 		this.t = 0;
 		this.N = N;
+		this.gridEnabled = 1;
+		this.gridDraw = [1,0];
 		this.width = document.getElementById("canvas_holder").clientWidth;
 		this.height = screen.width > 961 ? 700 : 500;
 		this.mouseOld = new THREE.Vector2();
@@ -155,7 +159,9 @@ class RenderIt{
 		this.positionsWell = new Float32Array(this.N * 3);
 		this.renderer = null;
 		this.scene = null;
+		this.gridHelper = null;
 		this.camera = null;
+		this.hover = 0;
 		this.animate = null;
 		this.line = null;
 		this.lineRe = null;
@@ -184,6 +190,24 @@ class RenderIt{
 
     }
 	
+	resizeGrid(){
+		if(this.gridDraw[0] == 1){
+			this.scene.remove( this.gridHelper );
+			this.gridHelper = new THREE.GridHelper( 1000, parseInt(this.scaleProb/ 25000) );
+			this.gridHelper.rotation.x = Math.PI / 2;
+			this.gridHelper.position.z = -20;
+			this.scene.add( this.gridHelper );
+		}else{
+			this.scene.remove( this.gridHelper2 );
+			this.gridHelper2 = new THREE.GridHelper( 1000, parseInt(this.scaleProb/ 25000) );
+			this.gridHelper2.rotation.x = Math.PI / 2;
+			this.gridHelper2.position.z = -20;
+			this.scene.add( this.gridHelper2 );
+			
+		}
+		
+	}
+	
 	
 	getAscpect(){
 		
@@ -193,6 +217,8 @@ class RenderIt{
 	onWindowResize(){
 		this.camera.aspect =  this.getAscpect();
 		this.camera.updateProjectionMatrix();
+		
+		this.resizeGrid();
 		
 		this.renderer.setSize( document.getElementById("canvas_holder").clientWidth, this.height );
 		
@@ -256,7 +282,17 @@ class RenderIt{
 		cube.position.set(0, 0, -10);
 		//this.scene.add( cube );
 		
-		
+		let size = 1000;
+		let divisions = 6;
+
+		this.gridHelper = new THREE.GridHelper( size, divisions, new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6));
+		this.gridHelper.rotation.x = Math.PI / 2;
+		this.gridHelper.position.z = -20;
+		this.gridHelper2 = new THREE.GridHelper( size, divisions,  new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
+		this.gridHelper2.rotation.x = Math.PI / 2;
+		this.gridHelper2.position.z = -20;
+		this.scene.add( this.gridHelper2 );
+		this.scene.add( this.gridHelper );
 
 		if(this.desktop)
 			this.addEnergyCircles();
@@ -285,16 +321,17 @@ class RenderIt{
 		if (intersects.length > 0) {
 			
 			$('html,body').css('cursor', 'pointer');
-			
+
 			if(this.mouseDown == 1 && this.alreadyChecked == 0){
 				this.alreadyChecked = 1;
+				
 				let index = this.circleC.indexOf(intersects[ 0 ].object);
 				if(this.sim.enabled[index] == 0){
 					this.circleC[index].material.color.setHex( 0xff00ff );
 					this.sim.enabled[index] = 1;
 					psiArr[index].checked = true;
 				}else{
-					this.circleC[index].material.color.setHex( 0x0 );
+					this.circleC[index].material.color.setHex( 0x3b383d );
 					this.sim.enabled[index] = 0;
 					psiArr[index].checked = false;
 				}
@@ -316,30 +353,37 @@ class RenderIt{
 			geometryC[i] = new THREE.CircleGeometry(this.radius, 32);
 
 			let materialCL = new Array(this.numberOfDisplayedStates);
-			let materialC = new THREE.LineBasicMaterial({ color: 0x0, side: THREE.DoubleSide});
+			let materialC = null;
+			if(this.sim.enabled[i]){
+				materialC = new THREE.LineBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide});
+			}else{
+				materialC = new THREE.LineBasicMaterial({ color: 0x3b383d, side: THREE.DoubleSide});
+			}
 			/*for (let j = 0; j <= (this.segmentCount)*3; j+=3) {
 				let theta = (j / this.segmentCount) * Math.PI * 2;
 				geometryC[i].vertices.push(new THREE.Vector3(Math.cos(theta) * this.radius, Math.sin(theta) * this.radius, 0));
 						          
 			}*/
+			
 			let maxInLine = parseInt(this.width / (2*this.radius));
+			this.move = (parseInt((i)/maxInLine)+1)*(2*this.radius);
 			this.circleC[i] = new THREE.Mesh(geometryC[i], materialC);
 			let spare = this.width - this.radius * 2 * maxInLine;
 			let padding = spare /(2*this.numberOfDisplayedStates);
 			geometryCL[i] = new THREE.Geometry();
-
+			
 			geometryCL[i].vertices.push(new THREE.Vector3(0,0,0),new THREE.Vector3(0,this.radius,0));            
 			
 			this.circleCL[i] = new THREE.Line(geometryCL[i], materialC);
 			
 			
-			this.circleC[i].position.set(spare/2   + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2 + this.radius + (parseInt((i)/maxInLine))*2*this.radius, -10);
-			this.circleCL[i].position.set(spare/2  + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2+ this.radius + (parseInt((i)/maxInLine))*2*this.radius, -10);
+			this.circleC[i].position.set(spare/2   + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2 + this.radius + ((parseInt(this.numberOfDisplayedStates/maxInLine)) - parseInt((i)/maxInLine))*2*this.radius, -10);
+			this.circleCL[i].position.set(spare/2  + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2+ this.radius + ((parseInt(this.numberOfDisplayedStates/maxInLine)) - parseInt((i)/maxInLine))*2*this.radius, -10);
 			
 
 			this.scene.add( this.circleC[i] );
 			//this.scene.add( this.circleCL[i] );
-			this.move = (parseInt((i)/maxInLine)+1)*(2*this.radius);
+			
 		}
 		
 	}
@@ -375,16 +419,18 @@ class RenderIt{
 		
 		let maxHeight = this.height-this.move;
 		
-		let scaleWave1 = 0.4 * maxHeight / maxR;
-		let scaleWave2 = 0.4 * maxHeight / maxI;
+		let scaleWave1 = Math.abs(0.4 * maxHeight / maxR);
+		let scaleWave2 =  Math.abs(0.4 * maxHeight / maxI);
 		
-		let scaleProb = 0.5 * maxHeight / maxP;
+		let scaleProb =  Math.abs(0.5 * maxHeight / maxP);
 		
 		this.scaleProb = scaleProb;
 		if(scaleWave1 < scaleWave2)
 			this.scaleWave = scaleWave1;
 		else
 			this.scaleWave = scaleWave2;
+		
+		this.resizeGrid();
 		
 	}
 	
@@ -450,7 +496,7 @@ for(let i=0; i < abc.sim.levels; i++){
 
 		}else{
 			abc.sim.enabled[i] = 0;
-			abc.circleC[i].material.color.setHex( 0x0 );
+			abc.circleC[i].material.color.setHex( 0x3b383d );
 		}
 		
 	});
@@ -477,6 +523,8 @@ var clearer = document.getElementById("clearer");
 var rescale = document.getElementById("rescale");
 var chRe = document.getElementById("chRe");
 var chDe = document.getElementById("chDe");
+var chGrid = document.getElementById("chGrid");
+var sldierTime = document.getElementById("slider_time");
 
 running.addEventListener( "change", 
 	function(){
@@ -501,7 +549,7 @@ triangle.addEventListener( "click",
 			}else{
 				psiArr[ii].checked = false;
 				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x0 );
+				abc.circleC[ii].material.color.setHex( 0x3b383d );
 			}
 		}
 		abc.sim.time = 0;
@@ -530,7 +578,7 @@ clearer.addEventListener( "click",
 			}else{
 				psiArr[ii].checked = false;
 				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x0 );
+				abc.circleC[ii].material.color.setHex( 0x3b383d );
 			}
 		}
 		abc.sim.time = 0;
@@ -541,6 +589,13 @@ clearer.addEventListener( "click",
 			setAmp(ii, 1.414);
 		}
 });
+
+sldierTime.addEventListener("input", function(e) {
+		var target = (e.target) ? e.target : e.srcElement;
+		abc.sim.timeAdd = (target.value);
+		abc.sim.time = 0;
+		
+	});
 
 rescale.addEventListener( "click", function(){
 	abc.rescale();
@@ -560,10 +615,21 @@ function(){
 		abc.drawing[0] = 1;
 		abc.drawing[1] = 0;
 		chRe.checked = false;
+		abc.gridDraw = [1,0];
 	}else{
 		abc.drawing[0] = 0;
 		abc.drawing[1] = 1;
 		chRe.checked = true;
+		abc.gridDraw = [0,1];
+	}
+});
+
+chGrid.addEventListener( "change", 
+function(){
+	if (this.checked) {
+		abc.gridEnabled = 1;
+	}else{
+		abc.gridEnabled = 0;
 	}
 });
 
@@ -573,10 +639,12 @@ function(){
 		abc.drawing[1] = 1;
 		abc.drawing[0] = 0;
 		chDe.checked = false;
+				abc.gridDraw = [0,1];
 	}else{
 		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
 		chDe.checked = true;
+		abc.gridDraw = [1,0];
 	}
 });
 
@@ -614,7 +682,7 @@ abc.renderer.domElement.addEventListener('mousemove', function(event) {
 		}
 		, false);
 
-
+chGrid.checked = true;
 this.animate = function() {
 			requestAnimationFrame(animate);
 			abc.updatePositions();
@@ -638,6 +706,22 @@ this.animate = function() {
 				abc.line.visible = false;
 				abc.lineIm.visible = false;
 			}	
+
+			if(abc.gridEnabled == 1){
+				if(abc.gridDraw[0] == 1){
+					
+					abc.gridHelper.visible = true;
+					abc.gridHelper2.visible = false;
+				}else{
+					abc.gridHelper.visible = false;
+					abc.gridHelper2.visible = true;
+
+				}
+				
+			}else{
+				abc.gridHelper.visible = false;
+				abc.gridHelper2.visible = false;
+			}
 			
 			abc.renderer.render(abc.scene, abc.camera);
 }
