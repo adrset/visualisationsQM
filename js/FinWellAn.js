@@ -117,7 +117,7 @@ class Simulation {
 			
 			// we know that we can expect the value between certain range
 			// we will use command and conquer to find the optimal value
-			let k = i*Math.PI; // srodek 
+			let k = i*Math.PI + Math.PI/4; // srodek 
 			for(let step = 0; step<100; step++){
 				
 				
@@ -125,18 +125,20 @@ class Simulation {
 				let val =k*tan;  // ksi^2 + eta^2 = k^2 + k^2tan^2(k) = k^2(1+tan^2(k))
 				let val2 = Math.sqrt(R*R - k*k); //ups R^2 - k*k - w kole
 				if(val< val2){ // go right
-					k+=(Math.PI/4)*pown(0.5,step);
+					k+=(Math.PI/4)*pown(0.5,step+1);
 				
 				}
 				else {// go left
-					k-=(Math.PI/4)*pown(0.5,step);
+					k-=(Math.PI/4)*pown(0.5,step+1);
 				}
 				
 				if(Math.abs(val2-val) < 0.00001){
-					//console.log("not reached 100");
+					console.log("not reached 100");
 					step = 100;
 				}
-				
+				if(step == 99){
+				console.log(Math.abs(val2-val));
+			}
 			}
 			
 			let ksi = k;
@@ -162,30 +164,30 @@ class Simulation {
 		
 		
 		
-		let solutions = Math.ceil((R )/ (Math.PI));
+		let solutions = Math.floor((R )/ (Math.PI));
 		console.log(solutions + "solutions");
 		this.evenSeolutionsNumber = solutions;
 		for(let i=0; i < solutions; i++){
 			
 			// we know that we can expect the value between certain range
 			// we will use command and conquer to find the optimal value
-			let k = (i*Math.PI) + (Math.PI/4);
+			let k = (i*Math.PI) + (Math.PI/2)+ (Math.PI/4);
 			for(let step = 0; step<100; step++){
 					
 				let tan = Math.tan(k);
 				let val = -k/tan; //eta
 				let val2 = Math.sqrt(R*R - k*k);
 				if(val< val2){ // go right
-					k+=(Math.PI/4)*pown(0.5,step);
+					k+=(Math.PI/4)*pown(0.5,step+1);
 				
 				}
 				else {// go left
-					k-=(Math.PI/4)*pown(0.5,step);
+					k-=(Math.PI/4)*pown(0.5,step+1);
 				}
 				
 				
 				if(Math.abs(val2-val) < 0.00001){
-					//console.log("not reached 100");
+					console.log("not reached 100");
 					step = 100;
 				}
 				
