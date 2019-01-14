@@ -589,9 +589,26 @@ class RenderIt{
 			this.circleC[i].position.set(spare/2   + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2 + this.radius + ((parseInt(this.numberOfDisplayedStates/maxInLine)) - parseInt((i)/maxInLine))*2*this.radius, -10);
 			this.circleCL[i].position.set(spare/2  + this.radius-this.width/2 + ((i)%maxInLine)*2*this.radius, -this.height/2+ this.radius + ((parseInt(this.numberOfDisplayedStates/maxInLine)) - parseInt((i)/maxInLine))*2*this.radius, -10);
 			
-
+			
 			this.scene.add( this.circleC[i] );
+			
 			//this.scene.add( this.circleCL[i] );
+			
+		}
+		this.repairCircles();
+	}
+	/*  As the number of available states vary thorought different topologies of the quantum well,
+	we need to check how many circles we actually want to draw! :)                               */
+	repairCircles(){
+		let val =  this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber;
+		for(let i = 0; i < val && i < this.sim.levels; i++){
+			console.log(i);
+			this.circleC[i].visible = true;
+			
+		}
+		
+		for(let i =this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber; i < this.sim.levels; i++){
+			this.circleC[i].visible = false;
 			
 		}
 		
@@ -824,6 +841,7 @@ sliderA.addEventListener("input", function(e) {
 	abc.sim.a = parseFloat(target.value);
 	abc.sim.calcNP2();
 	abc.sim.calcP2();
+	abc.repairCircles();
 	//abc.rescale();
 	//abc.resizeGrid();
 	abc.sim.time = 0;
@@ -835,6 +853,7 @@ sliderU.addEventListener("input", function(e) {
 	abc.sim.U = parseFloat(target.value);
 	abc.sim.calcNP2();
 	abc.sim.calcP2();
+	abc.repairCircles();
 	//abc.rescale();
 	//abc.resizeGrid();
 	abc.sim.time = 0;
@@ -883,7 +902,7 @@ function(){
 		abc.drawing[1] = 1;
 		abc.drawing[0] = 0;
 		chDe.checked = false;
-				abc.gridDraw = [0,1];
+		abc.gridDraw = [0,1];
 	}else{
 		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
@@ -934,6 +953,7 @@ this.animate = function() {
 			abc.lineRe.geometry.attributes.position.needsUpdate = true;
 			abc.lineIm.geometry.attributes.position.needsUpdate = true;
 			abc.lineWell.geometry.attributes.position.needsUpdate = true;
+			
 			abc.checkIntersections();
 			if(abc.drawing[0] == 1){
 				abc.lineRe.visible = true;
