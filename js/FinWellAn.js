@@ -23,6 +23,7 @@ class Simulation {
 		this.dt = 0.0001;
 		this.n = 1;
 		this.m = 1;
+		this.U = 1;
 		this.L = 1;
 		this.hbar = 1;
 		this.dx = 1;
@@ -39,7 +40,8 @@ class Simulation {
 		this.p = [];
 		this.x = [];
 		this.V = [];
-		this.a = 1;
+		this.a = 5;
+		this.current = 0;
 		this.tau = 0;
 		this.time = 0;
 		this.run = 1;
@@ -62,45 +64,7 @@ class Simulation {
 		this.enabled[0] = 1;
     }
 	
-	calcNP(){
-		let t0 = performance.now();
-		// liczba rozwiazan nieparzystych - mniumum 1
-		// liczba rozwiazan parzystych - minimum 0
-		
-		// liczba rozwiazan np - stosunek R do Pi/2 (czyli ile sie miesci tangensow)
-		// liczba rozwiazan p - stosunek R + Pi/2 do Pi/2 (czyli ile sie miesci tangensow)
-
-		//patzyste
-		let R = this.a;
-		let solutions = 1+ parseInt((R )/ (Math.PI));
-		
-		console.log(solutions);
-		for(let i=0 ; i < solutions; i++){
-			for(let k = i*Math.PI;k<i*Math.PI + Math.PI/2;k+=0.00001){
-				let tan = Math.tan(k);
-				let val = k*k *(1+tan*tan) - R*R;
-				let check = Math.abs(val);
-				if (check < 0.1 ){
-					let ksi = k;
-					let eta = k*Math.tan(k);
-					console.log("ksi: " +ksi +  ", eta:"+ eta);
-					
-					k = i*Math.PI + Math.PI/2 + 1;
-				}
-				
-			}
-			
-		}
-		let t1 = performance.now();
-		
-		console.log((t1-t0) + "ms")
-		return solutions;
-		
-	}
-	
 	calcNP2(){
-		let t0 = performance.now();
-
 
 		// liczba rozwiazan nieparzystych - mniumum 1
 		// liczba rozwiazan parzystych - minimum 0
@@ -109,10 +73,13 @@ class Simulation {
 		// liczba rozwiazan p - stosunek R + Pi/2 do Pi/2 (czyli ile sie miesci tangensow)
 
 		//patzyste
-		let R = this.a;
+		let R = this.a*this.a*this.U;
 		let solutions = 1+ parseInt((R )/ (Math.PI));
+		
+		console.log("Computing possible states for odd waves ( " + solutions + " ).");
+				
 		this.oddSolutionsNumber = solutions;
-		console.log(solutions);
+		
 		for(let i=0 ; i < solutions; i++){
 			
 			// we know that we can expect the value between certain range
@@ -133,7 +100,7 @@ class Simulation {
 				}
 				
 				if(Math.abs(val2-val) < 0.00001){
-					console.log("not reached 100");
+					//console.log("not reached 100");
 					step = 100;
 				}
 				if(step == 99){
@@ -149,24 +116,22 @@ class Simulation {
 			console.log("ksi: " +ksi +  ", eta:"+ eta);
 			
 		}
-		let t1 = performance.now();
-		
-		console.log((t1-t0) + "ms")
+
 		return solutions;
 		
 	}
 	
 	calcP2(){
-		let t0 = performance.now();
-		let R = this.a;
+
+		let R = this.a*this.a*this.U;
 		if(R < Math.PI / 2)
 			return 0;
 		
 		
 		
 		let solutions = Math.floor((R )/ (Math.PI));
-		console.log(solutions + "solutions");
-		this.evenSeolutionsNumber = solutions;
+		console.log("Computing possible states for even waves ( " + solutions + " ).");
+		this.evenSolutionsNumber = solutions;
 		for(let i=0; i < solutions; i++){
 			
 			// we know that we can expect the value between certain range
@@ -187,7 +152,7 @@ class Simulation {
 				
 				
 				if(Math.abs(val2-val) < 0.00001){
-					console.log("not reached 100");
+					//console.log("not reached 100");
 					step = 100;
 				}
 				
@@ -197,53 +162,13 @@ class Simulation {
 			let eta = -k/Math.tan(k);
 			this.evenSolutions[i] = {"ksi": parseFloat(ksi), "eta" : parseFloat(eta)};
 			console.log("ksi: " +ksi +  ", eta:"+ eta);
-			this.oddSolutionsKappa[i] = eta / this.a;
-			this.oddSolutionsK[i] = ksi / this.a;	
+			this.evenSolutionsKappa[i] = eta / this.a;
+			this.evenSolutionsK[i] = ksi / this.a;	
 			
 		}
 
 		let t1 = performance.now();
-		
-		console.log((t1-t0) + "ms")
-		return solutions;
-	}
 	
-	calcP(){
-				let t0 = performance.now();
-		let R = this.a;
-		if(R < Math.PI / 2)
-			return 0;
-		
-		
-		
-		let solutions = Math.ceil((R )/ (Math.PI));
-		//console.log(solutions);
-		for(let i=0; i < solutions; i++){
-			console.log(i);
-			let start = parseFloat(i*Math.PI) + (Math.PI/2);
-			let end = parseFloat(i*Math.PI) + Math.PI;
-			
-			for(let k = start ;k<end;k+=0.00001){
-				
-				let tan = Math.tan(k);
-				let val = k*k *(1+1/(tan*tan)) - R*R;
-				let check = Math.abs(val);
-				if (check < 0.1 ){
-					let ksi = k;
-					let eta = -k*1/Math.tan(k);
-					
-					console.log("ksi: " +ksi +  ", h:"+ eta);
-					k=R;
-					
-					
-				}
-				
-			}
-		}
-	
-		let t1 = performance.now();
-		
-		console.log((t1-t0) + "ms")
 		return solutions;
 	}
 	
@@ -255,7 +180,7 @@ class Simulation {
 		//console.log(k );
 		//console.log(this.oddSolutions[(n+1)/2 - 1]);
 		//console.log(k); -3.20528)/Math.cos(3.83747)*Math.cos(3.83747*k
-		let index = k % 2 == 0 ? (n)/2 - 1:(n+1)/2 - 1;
+		let index = n % 2 == 0 ? (n)/2 - 1:(n+1)/2 - 1;
 		let A = k % 2 == 0 ? Math.sqrt((this.evenSolutionsKappa[index])/(this.oddSolutionsKappa[index]*this.a + 1)):Math.sqrt((this.oddSolutionsKappa[index])/(this.oddSolutionsKappa[index]*this.a + 1));
 		if(wave == 1){
 			if(n % 2 == 1){
@@ -280,76 +205,73 @@ class Simulation {
 				//console.log(k + " = " + Math.cos(this.oddSolutionsK[index]*this.a)*Math.exp((this.a - k * this.dx)*this.oddSolutionsKappa[index]));
 				return Math.cos(this.oddSolutionsK[index]*this.a)*Math.exp((this.a - k * this.dx)*this.oddSolutionsKappa[index]);
 			}else{
+				
 				return Math.sin(this.evenSolutionsK[index]*this.a)*Math.exp(( this.a - k * this.dx)*this.evenSolutionsKappa[index]);
 			}
 		}
 	
     }
-	
-	calculateStationaryEnergy(n){
-		
-		return n*n * Math.PI * Math.PI / (2* this.m * this.L * this.L);
-		
-	}
 
     update(){
+		
 		//this.levels = this.calcNP() + this.calcP();
 		//console.log(this.calcNP() + this.calcP());
 		let toAnnounce = "&Psi; =";
 		let sols = this.oddSolutionsNumber + this.evenSolutionsNumber;
-		for(let jj = 0; jj< sols; jj++){
+		
+		
+		//console.log("Solutions: " + this.oddSolutionsNumber + " + " + this.evenSolutionsNumber );
+		for(let jj = 0; jj< sols && jj < this.levels; jj++){
 			// let's set the maximum width = 6a
-			let maxWidth = 6 *this.a;
+			let maxWidth = 15;
 			//console.log(maxWidth);
 			let delta = (maxWidth /( this.N+1));
 			//console.log(delta);
 			let wellStart = maxWidth/2 - this.a;// from - maxWidth / 2 to -this.a
+			let wellEnd = maxWidth/2 + this.a;// from - maxWidth / 2 to -this.a
 			//console.log(wellStart);
 			let wellWidth = maxWidth - 2 * this.a;
 			//console.log(wellWidth);
 			if(this.enabled[jj] == 1){
+
 				//console.log(wellStart / maxWidth * this.N);
 				toAnnounce += "	&Psi;<sub>" + (jj+1) + "</sub> + ";
 				for (let ii = 0; ii < parseInt(wellStart / maxWidth * this.N); ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.cos(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
-							//console.log(-maxWidth/2 + ii*delta);
+							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							//console.log(ii);
 							this.x[ii] = ii;
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.sin(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
+							this.V[ii] = this.U;
+							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 				}
 				
 
 				//console.log(this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 1) + " vs " + this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 2));
 				
-				for (let ii = parseInt(wellStart / maxWidth * this.N); ii < parseInt(wellWidth / maxWidth * this.N); ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.cos(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
+				for (let ii = parseInt(wellStart / maxWidth * this.N); ii < parseInt(wellEnd / maxWidth * this.N); ii++){
+							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							this.x[ii] = ii;
+							//console.log(ii);
 							//console.log(-maxWidth/2 + ii*delta);
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.sin(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
+							this.V[ii] = 0;
+							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 				}
-				//console.log(this.calculateStationary(jj+1, parseInt(wellWidth / maxWidth * this.N)*delta, 2) + " vs " + this.calculateStationary(jj+1, parseInt(wellWidth / maxWidth * this.N)*delta, 3));
+				//console.log(parseInt(wellWidth / maxWidth * this.N));
 
 				
-				for (let ii = -maxWidth/2 + parseInt(wellWidth / maxWidth * this.N); ii < this.N+1; ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.cos(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));;
+				for (let ii =  parseInt(wellEnd / maxWidth * this.N); ii < this.N+1; ii++){
+							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							this.x[ii] = ii;
+							this.V[ii] = this.U;
+							//console.log(ii);
 							//console.log(-maxWidth/2 + ii*delta);
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.sin(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));;
+							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 				}
 
 			}
 		}
 		
-		for (let ii = 0; ii < this.potentialStart; ii++){
-			this.V[ii] = this.potentialHeight;
-		}
-		
-		for (let ii = this.potentialStart; ii < this.potentialEnd; ii++){
-			this.V[ii] = 0;
-		}
-		
-		for (let ii = this.potentialEnd; ii < this.N + 1; ii++){
-			this.V[ii] = this.potentialHeight;
-		}
+		this.potentialStart
+	
 		
 
 		if(this.run == 1){
@@ -371,8 +293,9 @@ class Simulation {
 		for (let ii = 0; ii < this.N + 1; ii++){
 			this.im[ii] = 0;
 			this.re[ii] = 0;
-			for(let jj = 0; jj< this.levels; jj++){
+			for(let jj = 0; jj< this.levels && jj< sols; jj++){
 				if(this.enabled[jj] == 1){
+
 					this.im[ii] += this.imArray[jj][ii];
 					this.re[ii] += this.reArray[jj][ii];
 				}
@@ -479,13 +402,13 @@ class RenderIt{
 	resizeGrid(){
 		if(this.gridDraw[0] == 1){
 			this.scene.remove( this.gridHelper );
-			this.gridHelper = new THREE.GridHelper( this.gridSize, parseInt(this.scaleProb/ 15000) );
+			this.gridHelper = new THREE.GridHelper( this.gridSize, parseInt(this.scaleProb/ 15000), new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
 			this.gridHelper.rotation.x = Math.PI / 2;
 			this.gridHelper.position.z = -20;
 			this.scene.add( this.gridHelper );
 		}else{
 			this.scene.remove( this.gridHelper2 );
-			this.gridHelper2 = new THREE.GridHelper( this.gridSize, parseInt(this.scaleProb/ 15000) );
+			this.gridHelper2 = new THREE.GridHelper( this.gridSize, parseInt(this.scaleProb/ 15000), new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
 			this.gridHelper2.rotation.x = Math.PI / 2;
 			this.gridHelper2.position.z = -20;
 			this.scene.add( this.gridHelper2 );
@@ -552,7 +475,7 @@ class RenderIt{
 		this.lineRe = new THREE.Line( geometry2, material2 );
 
 		var geometry3 = new THREE.BufferGeometry();
-		var material3 = new THREE.LineBasicMaterial({ color: 0x00fff0, linewidth: 2 });
+		var material3 = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
 		geometry3.addAttribute('position', new THREE.BufferAttribute(this.positionsWell, 3));
 		geometry3.setDrawRange(0, this.N);
 		this.lineWell = new THREE.Line( geometry3, material3 );
@@ -571,10 +494,10 @@ class RenderIt{
 		let size = 1000;
 		let divisions = 6;
 
-		this.gridHelper = new THREE.GridHelper( this.gridSize, 12 );
+		this.gridHelper = new THREE.GridHelper( this.gridSize, 12, new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
 		this.gridHelper.rotation.x = Math.PI / 2;
 		this.gridHelper.position.z = -20;
-		this.gridHelper2 = new THREE.GridHelper( this.gridSize, 12 );
+		this.gridHelper2 = new THREE.GridHelper( this.gridSize, 12, new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
 		this.gridHelper2.rotation.x = Math.PI / 2;
 		this.gridHelper2.position.z = -20;
 		this.scene.add( this.gridHelper2 );
@@ -652,7 +575,7 @@ class RenderIt{
 			}*/
 			
 			let maxInLine = parseInt(this.width / (2*this.radius));
-			this.move = (parseInt((i)/maxInLine)+1)*(2*this.radius);
+			this.move = (parseInt((i)/maxInLine)+1)*(4*this.radius);
 			this.circleC[i] = new THREE.Mesh(geometryC[i], materialC);
 			let spare = this.width - this.radius * 2 * maxInLine;
 			let padding = spare /(2*this.numberOfDisplayedStates);
@@ -683,7 +606,7 @@ class RenderIt{
 		for(let i=0;i<3 *( this.N+1); i+=3){
 			this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
 			//console.log(this.scaleWave*this.sim.re[i/3]);
-			this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3]/2000;
+			this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3];
 			this.positions[ i+2 ] = 0;
 
 			this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
@@ -691,11 +614,11 @@ class RenderIt{
 			this.positionsRe[ i+2 ] = 0;
 			
 			this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsIm[ i+1 ] =  (this.scaleWave*this.sim.im[i/3]/2000);
+			this.positionsIm[ i+1 ] =  (this.scaleWave*this.sim.im[i/3]);
 			this.positionsIm[ i+2 ] = 0;
 			
 			this.positionsWell[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsWell[ i+1 ] =  8*this.sim.V[i/3];
+			this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/2000;
 			this.positionsWell[ i+2 ] = 0;
 
 
@@ -711,23 +634,19 @@ class RenderIt{
 		let minP = Math.abs(Math.min.apply(Math,this.sim.p));
 		let minR = Math.abs(Math.min.apply(Math,this.sim.re));
 		let minI = Math.abs(Math.min.apply(Math,this.sim.im));
-		
+		console.log(" min1: " + minR + " min2: " + minI + " max1: " + maxR + " max2: " + maxI);
 		let mP = maxP;
 		let mR = maxR > minR ? maxR : minR;
 		let mI = maxI > minI ? maxI : minI;
-		
+		console.log(" maxR: " + mR + " maxI: " + mI);
 		let maxHeight = this.height-this.move;
-		
-		let scaleWave1 = (0.4 * maxHeight / mR);
-		let scaleWave2 =  (0.4 * maxHeight / mI);
-		
+		let waveMax = mR > mI ? mR : mI;
+		console.log(" maxWave: " + waveMax);
 		let scaleProb =  (0.5 * maxHeight / mP);
-		
+		this.scaleWave = (0.4*maxHeight/waveMax);
 		this.scaleProb = scaleProb;
-		if(scaleWave1 < scaleWave2)
-			this.scaleWave = scaleWave1;
-		else
-			this.scaleWave = scaleWave2;
+		
+			
 		
 		this.resizeGrid();
 		
@@ -824,6 +743,8 @@ var chRe = document.getElementById("chRe");
 var chDe = document.getElementById("chDe");
 var chGrid = document.getElementById("chGrid");
 var sldierTime = document.getElementById("slider_time");
+var sliderA = document.getElementById("slider_a");
+var sliderU = document.getElementById("slider_U");
 
 running.addEventListener( "change", 
 	function(){
@@ -890,11 +811,35 @@ clearer.addEventListener( "click",
 });
 
 sldierTime.addEventListener("input", function(e) {
-		var target = (e.target) ? e.target : e.srcElement;
-		abc.sim.timeAdd = (target.value);
-		abc.sim.time = 0;
-		
-	});
+	var target = (e.target) ? e.target : e.srcElement;
+	abc.sim.timeAdd = (target.value);
+	
+	
+	abc.sim.time = 0;
+	
+});
+
+sliderA.addEventListener("input", function(e) {
+	var target = (e.target) ? e.target : e.srcElement;
+	abc.sim.a = parseFloat(target.value);
+	abc.sim.calcNP2();
+	abc.sim.calcP2();
+	//abc.rescale();
+	//abc.resizeGrid();
+	abc.sim.time = 0;
+	
+});
+
+sliderU.addEventListener("input", function(e) {
+	var target = (e.target) ? e.target : e.srcElement;
+	abc.sim.U = parseFloat(target.value);
+	abc.sim.calcNP2();
+	abc.sim.calcP2();
+	//abc.rescale();
+	//abc.resizeGrid();
+	abc.sim.time = 0;
+	
+});
 
 rescale.addEventListener( "click", function(){
 	abc.rescale();

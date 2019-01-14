@@ -193,13 +193,13 @@ class RenderIt{
 	resizeGrid(){
 		if(this.gridDraw[0] == 1){
 			this.scene.remove( this.gridHelper );
-			this.gridHelper = new THREE.GridHelper( 1000, parseInt(this.scaleProb/ 25000) );
+			this.gridHelper = new THREE.GridHelper( this.width, parseInt(this.scaleProb/ 25000), new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6));
 			this.gridHelper.rotation.x = Math.PI / 2;
 			this.gridHelper.position.z = -20;
 			this.scene.add( this.gridHelper );
 		}else{
 			this.scene.remove( this.gridHelper2 );
-			this.gridHelper2 = new THREE.GridHelper( 1000, parseInt(this.scaleProb/ 25000) );
+			this.gridHelper2 = new THREE.GridHelper( this.width, parseInt(this.scaleWave/ 25000), new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6));
 			this.gridHelper2.rotation.x = Math.PI / 2;
 			this.gridHelper2.position.z = -20;
 			this.scene.add( this.gridHelper2 );
@@ -282,7 +282,7 @@ class RenderIt{
 		cube.position.set(0, 0, -10);
 		//this.scene.add( cube );
 		
-		let size = 1000;
+		let size = this.width;
 		let divisions = 6;
 
 		this.gridHelper = new THREE.GridHelper( size, divisions, new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6));
