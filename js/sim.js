@@ -21,7 +21,7 @@
 		    var mouseDr = {};
 
 		    var mouseDown = 0;
-		    let N = 1600;
+		    let N = 3600;
 		    let h = 1.054e-34;
 		    let mass = 9.1e-31;
 		    let deltax = .1e-9;
@@ -453,7 +453,7 @@
 					// DENSITY
 		            positionsD[index2++] = -width / 2 + i / ratio;
 					if(drawing[0] == 1 ){
-						positionsD[index2++] = multiplier / 4 * (imag[i] * imag[i] + real[i] * real[i]);
+						positionsD[index2++] = multiplier / 2 * (imag[i] * imag[i] + real[i] * real[i]);
 					}else if(drawing[3] == 1){
 						positionsD[index2++] = multiplier / 4 * Math.sqrt(imag[i] * imag[i] + real[i] * real[i]);
 					}

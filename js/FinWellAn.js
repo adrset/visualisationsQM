@@ -46,8 +46,8 @@ class Simulation {
 		this.time = 0;
 		this.run = 1;
 		this.old = "";
-		this.potentialStart = parseInt(0.1*this.N);
-		this.potentialEnd = parseInt(0.9*this.N);
+		this.potentialStart = 0;
+		this.potentialEnd = 0;
 		this.potentialHeight = 10;
 		this.timeAdd = 0.001;
 		this.phases = new Array(this.levels);
@@ -244,7 +244,7 @@ class Simulation {
 							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 				}
 				
-
+				this.potentialStart = parseInt(wellStart / maxWidth * this.N);
 				//console.log(this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 1) + " vs " + this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 2));
 				
 				for (let ii = parseInt(wellStart / maxWidth * this.N); ii < parseInt(wellEnd / maxWidth * this.N); ii++){
@@ -257,7 +257,7 @@ class Simulation {
 				}
 				//console.log(parseInt(wellWidth / maxWidth * this.N));
 
-				
+				this.potentialEnd = parseInt(wellEnd / maxWidth * this.N);
 				for (let ii =  parseInt(wellEnd / maxWidth * this.N); ii < this.N+1; ii++){
 							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							this.x[ii] = ii;
@@ -270,7 +270,6 @@ class Simulation {
 			}
 		}
 		
-		this.potentialStart
 	
 		
 
@@ -375,6 +374,17 @@ class RenderIt{
 		this.lineV = null;
 		this.move = 0;
 		this.lineWell = null;
+		this.lineWellU1 = null;
+		this.lineWellL = null;
+		this.lineWellD = null; 
+		this.lineWellR = null;
+		this.lineWellU2 = null;
+		this.lineWellU1Tab = new Float32Array(2 * 3);
+		this.lineWellLTab = new Float32Array(2 * 3);
+		this.lineWellDTab = new Float32Array(2 * 3);
+		this.lineWellRTab = new Float32Array(2 * 3);
+		this.lineWellU2Tab = new Float32Array(2 * 3);
+		
 		this.scaleProb = 200000;
 		this.scaleWave = 500000;
 		this.alreadyChecked == 0;
@@ -457,7 +467,7 @@ class RenderIt{
 		}, false);
 		
 		this.raycaster =  new THREE.Raycaster();
-		this.raycaster.linePrecision = 2;
+		this.raycaster.linePrecision = 6;
 
 		this.theDiv.appendChild(this.renderer.domElement);
 		var geometry = new THREE.BufferGeometry();
@@ -482,6 +492,44 @@ class RenderIt{
 		var geometry4 = new THREE.BufferGeometry();
 		var material4 = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
 		geometry4.addAttribute('position', new THREE.BufferAttribute(this.positionsIm, 3));
+		
+		// separate potential lines
+		
+		this.lineWellU1 = null;
+		this.lineWellL = null;
+		this.lineWellR = null;
+		this.lineWellU2 = null;
+		var materialWell = new THREE.LineBasicMaterial({ color: 0x2fa0fa, linewidth: 2 });
+		
+		
+		let geometryU1 = new THREE.BufferGeometry();
+		geometryU1.addAttribute('position', new THREE.BufferAttribute(this.lineWellU1Tab, 3));
+		this.lineWellU1 = new THREE.Line( geometryU1, materialWell );
+		
+		let geometryL = new THREE.BufferGeometry();
+		geometryL.addAttribute('position', new THREE.BufferAttribute(this.lineWellLTab, 3));
+		this.lineWellL = new THREE.Line( geometryL, materialWell );
+		
+		let geometryD = new THREE.BufferGeometry();
+		geometryD.addAttribute('position', new THREE.BufferAttribute(this.lineWellDTab, 3));
+		this.lineWellD = new THREE.Line( geometryD, materialWell );
+		
+		let geometryR = new THREE.BufferGeometry();
+		geometryR.addAttribute('position', new THREE.BufferAttribute(this.lineWellRTab, 3));
+		this.lineWellR = new THREE.Line( geometryR, materialWell );
+		
+		let geometryU2 = new THREE.BufferGeometry();
+		geometryU2.addAttribute('position', new THREE.BufferAttribute(this.lineWellU2Tab, 3));
+		this.lineWellU2 = new THREE.Line( geometryU2, materialWell );
+		
+		this.scene.add(this.lineWellU1);
+		this.scene.add(this.lineWellL);
+		this.scene.add(this.lineWellD);
+		this.scene.add(this.lineWellR);
+		this.scene.add(this.lineWellU2);
+		
+		//
+		
 		geometry4.setDrawRange(0, this.N);
 		this.lineIm = new THREE.Line( geometry4, material4 );
 
@@ -509,7 +557,7 @@ class RenderIt{
 		this.scene.add(this.line);
 		this.scene.add(this.lineRe);
 		this.scene.add(this.lineIm);
-		this.scene.add(this.lineWell);
+		//this.scene.add(this.lineWell);
 
 
 
@@ -550,6 +598,24 @@ class RenderIt{
 		
 			
 		}
+		
+		
+		// potential 
+		
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		intersects = this.raycaster.intersectObjects([this.lineWellU1, this.lineWellU2], true);
+		if (intersects.length > 0) {
+			//V = 2000/this.scaleProb*(this.mouse.y + -this.height/2 - this.move)
+			//console.log(2000/this.scaleProb*(this.mouse.y +this.height/2 - this.move));
+			//this.sim.U = 2000/this.scaleProb*(this.mouse.y +this.height/2 - this.move);
+			$('html,body').css('cursor', 'pointer');
+		} 
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		intersects = this.raycaster.intersectObjects([this.lineWellL, this.lineWellR], true);
+		if (intersects.length > 0) {
+			console.log("Change well width!");
+			$('html,body').css('cursor', 'pointer');
+		} 
 		
 	}
 
@@ -618,8 +684,7 @@ class RenderIt{
 	updatePositions(){
 				
 		this.sim.update();
-		
-		
+
 		for(let i=0;i<3 *( this.N+1); i+=3){
 			this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
 			//console.log(this.scaleWave*this.sim.re[i/3]);
@@ -635,12 +700,61 @@ class RenderIt{
 			this.positionsIm[ i+2 ] = 0;
 			
 			this.positionsWell[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/2000;
+			if(this.drawing[0] == 1)
+				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/2000;
+			else
+				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleWave*this.sim.V[i/3]/2000;
+			
 			this.positionsWell[ i+2 ] = 0;
 
 
 		}
+		this.updateInteractiveLines();
+		
 				
+	}
+	
+	updateInteractiveLines(){
+		let ratio = 2 / this.width;
+		this.lineWellU1Tab[0] = -this.width/2;
+		this.lineWellU1Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU1Tab[2] = 0;
+		
+		this.lineWellU1Tab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
+		this.lineWellU1Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU1Tab[5] = 0;
+		
+		this.lineWellLTab[0] = -this.width/2 + this.sim.potentialStart/this.ratio;
+		this.lineWellLTab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellLTab[2] = 0;
+		
+		this.lineWellLTab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
+		this.lineWellLTab[4] =  -this.height/2 + this.move;
+		this.lineWellLTab[5] = 0;
+		
+		this.lineWellDTab[0] = -this.width/2 + this.sim.potentialStart/this.ratio;
+		this.lineWellDTab[1] = -this.height/2 + this.move;
+		this.lineWellDTab[2] = 0;
+		
+		this.lineWellDTab[3] =  -this.width/2 + this.sim.potentialEnd/this.ratio;
+		this.lineWellDTab[4] =  -this.height/2 + this.move;
+		this.lineWellDTab[5] = 0;
+		
+		this.lineWellRTab[0] = -this.width/2 + this.sim.potentialEnd/this.ratio;
+		this.lineWellRTab[1] = -this.height/2 + this.move;
+		this.lineWellRTab[2] = 0;
+		console.log(this.sim.potentialEnd);
+		this.lineWellRTab[3] = -this.width/2 + this.sim.potentialEnd/this.ratio;
+		this.lineWellRTab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000 ;
+		this.lineWellRTab[5] = 0;
+		
+		this.lineWellU2Tab[0] = -this.width/2 + this.sim.potentialEnd/this.ratio;
+		this.lineWellU2Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU2Tab[2] = 0;
+		
+		this.lineWellU2Tab[3] = this.width/2;
+		this.lineWellU2Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU2Tab[5] = 0;
 	}
 	
 	rescale(){
@@ -953,6 +1067,13 @@ this.animate = function() {
 			abc.lineRe.geometry.attributes.position.needsUpdate = true;
 			abc.lineIm.geometry.attributes.position.needsUpdate = true;
 			abc.lineWell.geometry.attributes.position.needsUpdate = true;
+			
+			
+			abc.lineWellU1.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellL.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellD.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellR.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellU2.geometry.attributes.position.needsUpdate = true;
 			
 			abc.checkIntersections();
 			if(abc.drawing[0] == 1){
