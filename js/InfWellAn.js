@@ -11,7 +11,9 @@ class Simulation {
 		this.ratio = this.N / this.width;
 		this.re = [];
 		this.im = [];
-		this.levels = 50;
+		
+		this.levels = screen.width > 961 ? 10 : 10;
+		console.log(this.levels);
 		this.reArray = new Array(this.levels);
 		this.imArray = new Array(this.levels);
 		this.pArray = new Array(this.levels);
@@ -151,7 +153,8 @@ class RenderIt{
 		this.gridEnabled = 1;
 		this.gridDraw = [1,0];
 		this.width = document.getElementById("canvas_holder").clientWidth;
-		this.height = screen.width > 961 ? 700 : 500;
+		this.height = document.getElementById("canvas_holder").clientHeight;
+		console.log(screen.width);
 		this.mouseOld = new THREE.Vector2();
 		this.positions = new Float32Array(this.N * 3);
 		this.positionsRe = new Float32Array(this.N * 3);
@@ -184,6 +187,11 @@ class RenderIt{
 		this.mouse = new THREE.Vector2();
 		this.theDiv = null;
 		this.desktop = 0;
+		
+		if(screen.width > 961){
+			this.desktop = 1;
+		}
+		
 		for(let i=0;i<this.numberOfDisplayedStates; i++){
 			this.circles[i] = new Float32Array(this.N * this.segmentCount);
 		}
@@ -225,13 +233,10 @@ class RenderIt{
 	}
 	
 	init(){
-		
-		if(screen.width > 961){
-			this.desktop = 1;
-		}
+		this.numberOfDisplayedStates = this.sim.levels;
 		
 		this.sim.setup();
-		this.numberOfDisplayedStates = this.sim.levels;
+		
 		this.scene = new THREE.Scene();
 
 		this.camera = new THREE.OrthographicCamera(this.width / -2, this.width / 2, this.height / 2, this.height / -2, 0, 1000);
@@ -271,7 +276,7 @@ class RenderIt{
 		geometry3.setDrawRange(0, this.N);
 		this.lineWell = new THREE.Line( geometry3, material3 );
 		var geometry4 = new THREE.BufferGeometry();
-		var material4 = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+		var material4 = new THREE.LineBasicMaterial({ color: 0x0f0fff, linewidth: 2 });
 		geometry4.addAttribute('position', new THREE.BufferAttribute(this.positionsIm, 3));
 		geometry4.setDrawRange(0, this.N);
 		this.lineIm = new THREE.Line( geometry4, material4 );
@@ -294,15 +299,15 @@ class RenderIt{
 		this.scene.add( this.gridHelper2 );
 		this.scene.add( this.gridHelper );
 
-		if(this.desktop)
-			this.addEnergyCircles();
+		
+		//this.addEnergyCircles();
 
 		this.scene.add(this.line);
 		this.scene.add(this.lineRe);
 		this.scene.add(this.lineIm);
 		this.scene.add(this.lineWell);
 
-
+		this.rescale();
 
 	}
 	
@@ -366,7 +371,7 @@ class RenderIt{
 			}*/
 			
 			let maxInLine = parseInt(this.width / (2*this.radius));
-			this.move = (parseInt((i)/maxInLine)+1)*(2*this.radius);
+			this.move = (parseInt((i)/maxInLine)+1)*(4*this.radius);
 			this.circleC[i] = new THREE.Mesh(geometryC[i], materialC);
 			let spare = this.width - this.radius * 2 * maxInLine;
 			let padding = spare /(2*this.numberOfDisplayedStates);
@@ -459,14 +464,14 @@ var clicker = $("#mode");
 var abc = new RenderIt(1000);
 abc.init();
 let newNode = document.createElement('table');
-newNode.innerHTML += "<table><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
+newNode.innerHTML += "<table class='psi_levels'><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
 for(let i=0; i < abc.sim.levels; i++){
 
 	let txt = (i + 1);
 	if((i + 1)<10){
 		txt = ' ' + (i + 1);
 	}
-	newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider_2" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider_2" /></td> </tr>';
+	newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
 	
 	
 }
@@ -492,11 +497,11 @@ for(let i=0; i < abc.sim.levels; i++){
 		abc.rescale();
 		if (this.checked) {
 			abc.sim.enabled[i] = 1;
-			abc.circleC[i].material.color.setHex( 0xff00ff );
+			//abc.circleC[i].material.color.setHex( 0xff00ff );
 
 		}else{
 			abc.sim.enabled[i] = 0;
-			abc.circleC[i].material.color.setHex( 0x3b383d );
+			//abc.circleC[i].material.color.setHex( 0x3b383d );
 		}
 		
 	});
@@ -522,7 +527,7 @@ var triangle = document.getElementById("triangle");
 var clearer = document.getElementById("clearer");
 var rescale = document.getElementById("rescale");
 var chRe = document.getElementById("chRe");
-var chDe = document.getElementById("chDe");
+//var chDe = document.getElementById("chDe");
 var chGrid = document.getElementById("chGrid");
 var sldierTime = document.getElementById("slider_time");
 
@@ -543,13 +548,13 @@ triangle.addEventListener( "click",
 				if(ii < 20){
 					psiArr[ii].checked = true;
 					abc.sim.enabled[ii] = 1;
-					abc.circleC[ii].material.color.setHex( 0xff00ff );
+					
 				}
 
 			}else{
 				psiArr[ii].checked = false;
 				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x3b383d );
+				
 			}
 		}
 		abc.sim.time = 0;
@@ -564,7 +569,9 @@ triangle.addEventListener( "click",
 		setAmp(12, 8 * Math.sqrt(3) / ( 169 * Math.PI * Math.PI));
 		setAmp(14, -8 / ( 75 *  Math.sqrt(3) * Math.PI * Math.PI));
 		setAmp(16, 8 *  Math.sqrt(3)/ ( 289 * Math.PI * Math.PI));
-		setAmp(18, -8 * Math.sqrt(3) / ( 361  * Math.PI * Math.PI));
+		setAmp(18, -8 * Math.sqrt(3) / ( 361 * Math.PI * Math.PI));
+	
+
 });
 
 clearer.addEventListener( "click", 
@@ -608,7 +615,7 @@ function setAmp(index, value){
 	psiAmp[index].value = value;
 	
 }
-
+/*
 chDe.addEventListener( "change", 
 function(){
 	if (this.checked) {
@@ -623,7 +630,7 @@ function(){
 		abc.gridDraw = [0,1];
 	}
 });
-
+*/
 chGrid.addEventListener( "change", 
 function(){
 	if (this.checked) {
@@ -638,17 +645,17 @@ function(){
 	if (this.checked) {
 		abc.drawing[1] = 1;
 		abc.drawing[0] = 0;
-		chDe.checked = false;
+		//chDe.checked = false;
 				abc.gridDraw = [0,1];
 	}else{
 		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
-		chDe.checked = true;
+		//chDe.checked = true;
 		abc.gridDraw = [1,0];
 	}
 });
 
-chDe.checked = true;
+//chDe.checked = true;
 chRe.checked = false;
 abc.renderer.domElement.addEventListener('mousedown', function(event){
 	event.preventDefault();
@@ -659,8 +666,14 @@ abc.renderer.domElement.addEventListener('mouseup', function(event){
 	abc.mouseDown = 0;
 	abc.alreadyChecked = 0;
 }, false);
+
+abc.renderer.domElement.addEventListener('touchend', function(event){
+
+	abc.mouseDown = 0;
+	abc.alreadyChecked = 0;
+}, false);
 abc.renderer.domElement.addEventListener('mousemove', function(event) {
-		
+	
 		
 			const rect = abc.theDiv.getBoundingClientRect();
 			if (event.clientX > rect.x && event.clientX < rect.x + rect.width) {
@@ -680,7 +693,31 @@ abc.renderer.domElement.addEventListener('mousemove', function(event) {
 			}
 
 		}
-		, false);
+, false);
+		
+
+		
+abc.renderer.domElement.addEventListener('touchstart', function(e){
+      abc.mouseDown = 1;
+		
+		const rect = abc.theDiv.getBoundingClientRect();
+			if (e.changedTouches[0].pageX > rect.x && e.changedTouches[0].pageX < rect.x + rect.width) {
+
+				if (e.changedTouches[0].pageY > rect.y && e.changedTouches[0].pageY < rect.y + rect.height) {
+
+					abc.mouseDr.x = abc.mouse.x - abc.mouseOld.x;
+					abc.mouseDr.y = abc.mouse.y - abc.mouseOld.y;
+					
+					abc.mouseOld.x = abc.mouse.x;
+					abc.mouseOld.y = abc.mouse.y;
+
+					abc.mouse.x = ((e.changedTouches[0].pageX - rect.x) / document.getElementById("canvas_holder").clientWidth) * 2 - 1;
+					abc.mouse.y = -((e.changedTouches[0].pageY - rect.y) / abc.height) * 2 + 1;
+				     //alert(abc.mouse.y) // alert pageX coordinate of touch point
+				}
+			}	
+		
+}, false);
 
 chGrid.checked = true;
 this.animate = function() {

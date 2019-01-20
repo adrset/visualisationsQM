@@ -11,6 +11,7 @@
 			var chIm = document.getElementById("chIm");
 			var chRe = document.getElementById("chRe");
 			var chDe = document.getElementById("chDe");
+			var running = document.getElementById("running");
 			var stopper = 0;
 
 			var iter = 0;
@@ -38,12 +39,12 @@
 			var rysujeText = ["DENSITY","IMAGINARIS", "REALIS"];
 			
 			var drawing = [1,0,0,0];
-		    
+		    var wasClicked = 0;
 			chIm.checked = false;
 			chRe.checked = false;
 			
-		    var PML_width = 100;
-		    let height = 700;
+		    var PML_width = 50;
+		    let height = document.getElementById("canvas_holder").clientHeight;
 		    var x1 = 790/ratio;
 		    var x2 = 800/ratio;
 		    var multiplier = 10000;
@@ -103,58 +104,11 @@
 			$("#restart").removeClass("hidden"); 
 			
 			$("#restart").click(function(){
-				clearData(myChart);
+				
 				setup();
 
 			});
-			var ctx = document.getElementById("myChart").getContext('2d');
-			var myChart = new Chart(ctx, {
-				type: 'scatter',
-				
-				fontColor : "#ffa45e",
-			   data: {
-				  datasets: [{
-					 label: "Norm",
-					 data: [],
-					 fillColor: "rgba(255, 138, 212,0.5)",
-					 pointBackgroundColor : "rgba(255, 0, 0,1)"
-				  }]
-			   },  
-			   options: {
-					scaleFontColor: 'red',
-					responsive: true,
-					tooltips: {
-						mode: 'single',
-					},
-					scales: {
-						xAxes: [{ 
-							gridLines: {
-								display: false,
-								color: "#000000"
-							},
-							ticks: {
-							  fontColor: "#000000",
-							  beginAtZero: true,
-							  steps: 5,
-							},
-						}],
-						yAxes: [{
-							display: true,
-							gridLines: {
-								display: true,
-								color: "#000000"
-							},
-							ticks: {
-							  fontColor: "#000000",
-							  beginAtZero: true,
-							  steps: 10,
-							  stepValue: 0.2,
-							  max: 2
-							},
-						}],
-					}
-				}    
-			});
+			
 				
 		    var stats = new Stats();
 		    stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -195,7 +149,7 @@
 		    var materialD = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
 		    var materialV = new THREE.LineBasicMaterial({ color: 0xff0505, linewidth: 2 });
 			var materialR = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
-		    var materialI = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+		    var materialI = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 2 });
   
 		    // line
 		    var lineV = new THREE.Line(geometryV, materialV);
@@ -214,52 +168,55 @@
 
 		        var t0 = performance.now();
 		        //console.log(stopper);
-		        if (stopper != 1) {
-			    stats.begin();
-		            for (var i = 0; i < updatesPerFrame - 1; i++) {
+		       
+				stats.begin();
+				if (stopper != 1) {
+					for (var i = 0; i < updatesPerFrame - 1; i++) {
 						time += dt;
-		                leapFrog();
+						leapFrog();
 						
-		            }
-					
-					
-					document.getElementById("time_elapsed").innerHTML= 'Czas: ' + parseInt(time*1e15) + 'fs'; 
-					document.getElementById("sim_alpha_val").innerHTML= ra
-		            requestAnimationFrame(animate);
-
-		            updatePositions();
-					
-					
-					//! ! 
-					
-					if(drawing[0] == 1 || drawing[3] == 1){
-						lineD.visible = true;
-					}else{
-						lineD.visible = false;
-					}	
-					
-					if(drawing[1] == 1){
-						lineR.visible = true;
-					}else{
-						lineR.visible = false;
-					}	
-					
-					if(drawing[2] == 1){
-						lineI.visible = true;
-					}else{
-						lineI.visible = false;
 					}
+				
+				}
+				
+				
+				document.getElementById("time_elapsed").innerHTML= 'Czas: ' + parseInt(time*1e15) + 'fs'; 
+			
+				requestAnimationFrame(animate);
 
-		            lineV.geometry.attributes.position.needsUpdate = true;
-		            lineD.geometry.attributes.position.needsUpdate = true;
-					lineR.geometry.attributes.position.needsUpdate = true;
-					lineI.geometry.attributes.position.needsUpdate = true;
-		            renderer.render(scene, camera);
-		            render();
-		            var t1 = performance.now();
-		            //console.log(1/((t1-t0)));
-					stats.end();
-		        }
+				updatePositions();
+				
+				
+				//! ! 
+				
+				if(drawing[0] == 1 || drawing[3] == 1){
+					lineD.visible = true;
+				}else{
+					lineD.visible = false;
+				}	
+				
+				if(drawing[1] == 1){
+					lineR.visible = true;
+				}else{
+					lineR.visible = false;
+				}	
+				
+				if(drawing[2] == 1){
+					lineI.visible = true;
+				}else{
+					lineI.visible = false;
+				}
+
+				lineV.geometry.attributes.position.needsUpdate = true;
+				lineD.geometry.attributes.position.needsUpdate = true;
+				lineR.geometry.attributes.position.needsUpdate = true;
+				lineI.geometry.attributes.position.needsUpdate = true;
+				renderer.render(scene, camera);
+				render();
+				var t1 = performance.now();
+				//console.log(1/((t1-t0)));
+				stats.end();
+			
 
 		    };
 
@@ -281,13 +238,32 @@
 		        var intersects = raycaster.intersectObjects([lineV], true);
 		        if (intersects.length > 0) {
 		            $('html,body').css('cursor', 'pointer');
-			    changePotential(1);
+					changePotential(1);
 		           
 		        } else {
 		            $('html,body').css('cursor', 'default');
- 			    changePotential(0);
+					changePotential(0);
+					
+					
+					var intersects = raycaster.intersectObjects([lineD], true);
+					if (intersects.length > 0 || wasClicked == 1) {
+						$('html,body').css('cursor', 'pointer');
+						if(mouseDown == 1 ){
+							
+							nc = (mouse.x + 1)/2 * width * ratio;
+							wasClicked = 1;
+							setup();
+						}else{
+							wasClicked = 0;
+							
+						}
+						//setup();
+					   
+					} 
 		            
 		        }
+				
+			
 
 
 		    }
@@ -319,7 +295,7 @@
 				mouseMoved.x = (mouse.x + 1)/2;
 				mouseMoved.y = (mouse.y + 1)/2;
 
-				if(mouseDown == 1){
+				if(mouseDown == 1 && wasClicked == 0){
 
 					if(a == 1){
 						vColor = 0xffaa25;
@@ -387,6 +363,9 @@
 					whichClicked = 0;
 					
 				}
+				
+				lineV.geometry.boundingSphere = null;
+				lineV.geometry.boundingBox = null;
 
 			}
 			
@@ -395,16 +374,10 @@
 				chart.update();
 			}
 
-			function clearData(chart) {
-				chart.data.datasets[0].data = [];
-				chart.update();
-			}
+			
 
 		    function updatePositions() {
-				if(iter++%20 == 0){
-					addData(myChart, "", {x: iter/10, y:calculateNorm()});
-					
-				}
+				
 				
 				if(calculateNorm()<0.9)
 					setup();
@@ -520,7 +493,7 @@
 					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
 					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
 					 
-					imag[i] += ra * (delta_r * gammaR(i) - delta_i * gammaI(i)) - (dt / h) * V[i] * real[i];		            
+					imag[i] += ra * (delta_r * gammaR(i) - delta_i * gammaI(N-i)) - (dt / h) * V[i] * real[i];		            
 		        }
 
 		    }
@@ -536,7 +509,7 @@
 			}
 			
 			function getSigma(x){
-				return 0.005 * ((x - PML_width)*dx)^2;
+				return 0.0005 * ((x - PML_width))^2;
 			}
 
 		    function onDocumentMouseMove(event) {
@@ -560,6 +533,26 @@
 		        }
 
 		    }
+			
+			function calculateEnergy(){
+				let comp = math.complex(1,3);
+				//console.log(comp);
+				psi = new Array(N);
+				
+				let ke = math.complex(0,0);
+				for (let i = 0; i < N ; i++) {
+					psi[i] = math.complex(real[i], imag[i]);
+				}
+				
+				for (let i = 1; i < N-1 ; i++) {
+		            let lap_p = math.add(math.add(psi[i+1],  math.multiply(psi[i], -2)),  psi[i-1]); 
+					//console.log(lap_p);
+		            //ke = math.add(ke, math.multiply(lap_p,math.conj(psi)));
+		        }
+				
+				//let K_E = -oneoverev*(Math.pow(h/deltax,2) / (2*mass));
+				//console.log(ke);
+			}
 
 
 		    function setup() {
@@ -573,6 +566,8 @@
 		            pos[i] = dx * i;
 		            pTotal = pTotal + Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
+				
+				calculateEnergy();
 
 		        // set values on the end to 0
 		        //imag[0] = 0; // set 0 at boundaries
@@ -633,6 +628,14 @@
 					V[N/2 ] = y * ev;
 					V[N/2 + 1] = y * ev;
 					
+				}else if(currentPreset == 4){
+					
+					for (var i = 0; i < N; i++) {
+						V[i] = 0;
+					}
+					
+				
+					
 				}
 					
 					
@@ -644,7 +647,7 @@
 		        slider.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            lambda = 1/(target.value);
-					clearData(myChart);
+					
 		            console.log(target.value);
 		            setup();
 		        });
@@ -657,14 +660,14 @@
 		                x1 = x2 - 5;
 		                target.value = x2 - 5;
 		            }
-					clearData(myChart);
+					
 		            setup();
 		        });
 				
 		        slidery.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            y = (target.value);
-					clearData(myChart);
+					
 		            setup();
 		        });
 				
@@ -676,20 +679,20 @@
 		                x2 = x1 + 5;
 		                target.value = x1 + 5;
 		            }
-					clearData(myChart);
+					
 		            setup();
 		        });
 		     
 		        sliderNc.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            nc = (target.value);
-					clearData(myChart);
+					
 		            setup();
 		        });
 				
 				$("#sim_options_preset_select").change(function(e) {
 		           var val = $(this).find(":selected").val();
-				   clearData(myChart);
+				   
 				   if(val == "barrier_int"){
 					    currentPreset = 0;
 
@@ -721,6 +724,10 @@
 						setY(0.1);
 					    currentPreset = 3;
 					    setup();
+				   }else if(val == "free"){
+
+					    currentPreset = 4;
+					    setup();
 				   }else{
 					   
 				   }
@@ -729,7 +736,7 @@
 		        sliderSigma.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            sigma = (target.value);
-					clearData(myChart);
+					
 		            setup();
 		        });
 				
@@ -738,14 +745,14 @@
 		            var target = (e.target) ? e.target : e.srcElement;
 		            dt = parseFloat(target.value)*1e-17;
 					ra = (0.5 * h / mass) * (dt / Math.pow(deltax, 2));
-					clearData(myChart);
+					
 		            setup();
 		        });
 
 		        sliderUpf.addEventListener("input", function(e) {
 		            var target = (e.target) ? e.target : e.srcElement;
 		            updatesPerFrame = (target.value);	
-					clearData(myChart);
+					
 		        });
 				
 				chDe.addEventListener( "change", 
@@ -780,6 +787,15 @@
 						drawing[1] = 1;
 					}else{
 						drawing[1] = 0;
+					}
+				});
+				running.checked = true;
+				running.addEventListener( "change", 
+				function(){
+					if (this.checked) {
+						stopper = 0;
+					}else{
+						stopper = 1;
 					}
 				});
 				

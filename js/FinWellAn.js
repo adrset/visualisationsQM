@@ -9,6 +9,29 @@ function pown(x,y){
 	
 }
 
+function toRad(alfa){
+		return alfa * Math.PI / 180;
+}
+class TwoSideArrow{
+	constructor( position, angle){
+		
+		let spriteMap = new THREE.TextureLoader().load( 'arrow.png' );
+
+		let spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+
+		this.sprite = new THREE.Sprite( spriteMaterial );
+		this.sprite.scale.set(30, 30, 1)
+		this.sprite.position.set(position.x, position.y, - 19);
+		
+		if(angle !== undefined){
+			this.sprite.material.rotation = toRad(angle);
+		}
+		
+	}
+	
+	
+}
+
 class Simulation {
     constructor(N) {
 		this.evenSolutions = new Array(100);
@@ -31,7 +54,7 @@ class Simulation {
 		this.ratio = this.N / this.width;
 		this.re = [];
 		this.im = [];
-		this.levels = 50;
+		this.levels = screen.width > 961 ? 10 : 10;
 		this.reArray = new Array(this.levels);
 		this.imArray = new Array(this.levels);
 		this.pArray = new Array(this.levels);
@@ -41,6 +64,7 @@ class Simulation {
 		this.x = [];
 		this.V = [];
 		this.a = 5;
+		this.aChanged = this.a;
 		this.current = 0;
 		this.tau = 0;
 		this.time = 0;
@@ -113,7 +137,7 @@ class Simulation {
 			this.oddSolutions[i] = {"ksi": ksi, "eta" : eta}
 			this.oddSolutionsKappa[i] = eta / this.a;
 			this.oddSolutionsK[i] = ksi / this.a;
-			console.log("ksi: " +ksi +  ", eta:"+ eta);
+			//console.log("ksi: " +ksi +  ", eta:"+ eta);
 			
 		}
 
@@ -161,7 +185,7 @@ class Simulation {
 			let ksi = k;
 			let eta = -k/Math.tan(k);
 			this.evenSolutions[i] = {"ksi": parseFloat(ksi), "eta" : parseFloat(eta)};
-			console.log("ksi: " +ksi +  ", eta:"+ eta);
+			//console.log("ksi: " +ksi +  ", eta:"+ eta);
 			this.evenSolutionsKappa[i] = eta / this.a;
 			this.evenSolutionsK[i] = ksi / this.a;	
 			
@@ -219,7 +243,7 @@ class Simulation {
 		let toAnnounce = "&Psi; =";
 		let sols = this.oddSolutionsNumber + this.evenSolutionsNumber;
 		
-		
+		this.a = this.aChanged;
 		//console.log("Solutions: " + this.oddSolutionsNumber + " + " + this.evenSolutionsNumber );
 		for(let jj = 0; jj< sols && jj < this.levels; jj++){
 			// let's set the maximum width = 6a
@@ -343,7 +367,7 @@ class Simulation {
 		}
 
 
-	
+		
     }
 	
 }
@@ -351,13 +375,14 @@ class Simulation {
 class RenderIt{
 	constructor(N) {
 		this.mouseDown = 0;
+		this.clicked = 0;
 		this.raycaster = null;
 		this.t = 0;
 		this.N = N;
 		this.gridEnabled = 1;
 		this.gridDraw = [1,0];
 		this.width = document.getElementById("canvas_holder").clientWidth;
-		this.height = screen.width > 961 ? 700 : 500;
+		this.height = document.getElementById("canvas_holder").clientHeight;
 		this.mouseOld = new THREE.Vector2();
 		this.positions = new Float32Array(this.N * 3);
 		this.positionsRe = new Float32Array(this.N * 3);
@@ -372,6 +397,7 @@ class RenderIt{
 		this.line = null;
 		this.lineRe = null;
 		this.lineV = null;
+		this.needsUpdate = 0;
 		this.move = 0;
 		this.lineWell = null;
 		this.lineWellU1 = null;
@@ -384,6 +410,7 @@ class RenderIt{
 		this.lineWellDTab = new Float32Array(2 * 3);
 		this.lineWellRTab = new Float32Array(2 * 3);
 		this.lineWellU2Tab = new Float32Array(2 * 3);
+		this.overview = 0;
 		
 		this.scaleProb = 200000;
 		this.scaleWave = 500000;
@@ -490,7 +517,7 @@ class RenderIt{
 		geometry3.setDrawRange(0, this.N);
 		this.lineWell = new THREE.Line( geometry3, material3 );
 		var geometry4 = new THREE.BufferGeometry();
-		var material4 = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+		var material4 = new THREE.LineBasicMaterial({ color: 0x0f0fff, linewidth: 2 });
 		geometry4.addAttribute('position', new THREE.BufferAttribute(this.positionsIm, 3));
 		
 		// separate potential lines
@@ -499,7 +526,7 @@ class RenderIt{
 		this.lineWellL = null;
 		this.lineWellR = null;
 		this.lineWellU2 = null;
-		var materialWell = new THREE.LineBasicMaterial({ color: 0x2fa0fa, linewidth: 2 });
+		var materialWell = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
 		
 		
 		let geometryU1 = new THREE.BufferGeometry();
@@ -527,7 +554,7 @@ class RenderIt{
 		this.scene.add(this.lineWellD);
 		this.scene.add(this.lineWellR);
 		this.scene.add(this.lineWellU2);
-		
+		this.addArrows();
 		//
 		
 		geometry4.setDrawRange(0, this.N);
@@ -551,16 +578,16 @@ class RenderIt{
 		this.scene.add( this.gridHelper2 );
 		this.scene.add( this.gridHelper );
 
-		if(this.desktop)
-			this.addEnergyCircles();
+		
+		//this.addEnergyCircles();
 
 		this.scene.add(this.line);
 		this.scene.add(this.lineRe);
 		this.scene.add(this.lineIm);
 		//this.scene.add(this.lineWell);
 
-
-
+		this.rescale();
+		this.updateSliders();
 	}
 	
 	removeEnergyCircles(){
@@ -571,51 +598,158 @@ class RenderIt{
 		
 	}
 	
-	checkIntersections(){
-		this.raycaster.setFromCamera(this.mouse, this.camera);
-				
-		var intersects = this.raycaster.intersectObjects(this.circleC, true);
-		if (intersects.length > 0) {
-			
-			$('html,body').css('cursor', 'pointer');
+	updateSliders(){
+		let levels = abc.sim.currentMaxLevel < 10 ? abc.sim.currentMaxLevel : 10;
+		let newNode = document.createElement('table');
+		document.getElementById("psi_n_levels").innerHTML = "";
+		newNode.innerHTML += "<table style='psi_levels'><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
+		let sols = this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber < 15 ? this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber : 15;
+		for(let i=0; i < sols; i++){
 
-			if(this.mouseDown == 1 && this.alreadyChecked == 0){
-				this.alreadyChecked = 1;
-				
-				let index = this.circleC.indexOf(intersects[ 0 ].object);
-				if(this.sim.enabled[index] == 0){
-					this.circleC[index].material.color.setHex( 0xff00ff );
-					this.sim.enabled[index] = 1;
-					psiArr[index].checked = true;
-				}else{
-					this.circleC[index].material.color.setHex( 0x3b383d );
-					this.sim.enabled[index] = 0;
-					psiArr[index].checked = false;
-				}
+			let txt = (i + 1);
+			if((i + 1)<10){
+				txt = ' ' + (i + 1);
 			}
-		} else {
-			$('html,body').css('cursor', 'default');
-		
+			newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
+	
+		}
+		newNode.innerHTML += "</table>"
+		document.getElementById("psi_n_levels").appendChild( newNode );
+		var psiArr = new Array(sols);
+		var psiPhase = new Array(sols);
+		var psiAmp = new Array(sols);
+		for(let i=0; i < sols; i++){
 			
+			psiArr[i] =  document.getElementById('n' + (i+1));
+			psiAmp[i] =  document.getElementById('slider_amp' + (i+1));
+			
+			psiPhase[i] =  document.getElementById('slider_phase' + (i+1));
+			if(i != 0)
+				psiArr[i].checked = false;
+			else
+				psiArr[i].checked = true;
+			
+			psiArr[i].addEventListener( "change", 
+			function(ii){
+				abc.sim.time = 0;
+				abc.rescale();
+				if (this.checked) {
+					abc.sim.enabled[i] = 1;
+					
+
+				}else{
+					abc.sim.enabled[i] = 0;
+					
+				}
+				
+			});
+			
+			psiPhase[i].addEventListener("input", function(e) {
+				var target = (e.target) ? e.target : e.srcElement;
+				abc.sim.phases[i] = (target.value);
+				abc.sim.time = 0;
+			});
+			
+			psiAmp[i].addEventListener("input", function(e) {
+				if(psiArr[i].checked == true)
+					abc.rescale();
+				
+				var target = (e.target) ? e.target : e.srcElement;
+				abc.sim.amp[i] = (target.value);
+				abc.sim.time = 0;
+			});
+		}
+		
+	}
+	
+	checkIntersections(){
+	
+		
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		var intersects = this.raycaster.intersectObjects([this.lineWellU1, this.lineWellU2], true);
+		if (intersects.length > 0 || this.clicked == 1) {
+			//V = 2000/this.scaleProb*(this.mouse.y + -this.height/2 - this.move)
+			//console.log(2000/this.scaleProb*(this.mouse.y +this.height/2 - this.move));
+			if(this.mouseDown){
+				this.clicked = 1;
+				//let val = (((this.mouse.y + 1)/2 - this.move / this.height) / (intersects[0].point.y + this.height / 2)/this.sim.U / (this.height - this.move));
+				//console.log(val);
+			
+				
+				//if(this.drawing[0] == 1)
+				//this.mouse.y + 1)/2 * this.height =  -this.height/2 + this.scaleProb*this.U/2000;
+				this.needsUpdate = 1;
+				
+			// 
+				this.sim.U = ((this.mouse.y + 1)/2 * this.height )*200/this.scaleProb;
+			}else{
+				this.clicked = 0;
+				
+				
+			}
+			
+			//this.sim.U = (intersects[0].point.y + this.height / 2 - this.move) * 2000/ this.scaleProb;
+			//console.log( ((this.mouse.y + 1) / 2 - this.move / this.height ) * (this.height  - this.move));
+			$('html,body').css('cursor', 'pointer');
+		}else{
+			$('html,body').css('cursor', 'default');
+		}
+				
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		intersects = this.raycaster.intersectObjects([this.lineWellL, this.lineWellR], true);
+		if (intersects.length > 0 || this.clicked == 2) {
+			if(this.mouseDown){
+				this.clicked = 2;
+				let maxWidth = 15;
+				//console.log(maxWidth);
+				let delta = (maxWidth /( this.sim.N+1));
+				//console.log(delta);
+				let wellStart = maxWidth/2 - this.sim.a;// from - maxWidth / 2 to -this.a
+				let wellEnd = maxWidth/2 + this.sim.a;// from - maxWidth / 2 to -this.a
+				//console.log(wellStart);
+				let wellWidth = maxWidth - 2 * this.sim.a;
+				//console.log((this.mouse.x + 1)/2 * this.width);
+				//console.log((this.sim.potentialStart + (this.sim.potentialEnd - this.sim.potentialStart) / 2) *  this.ratio);
+				let a  = (this.mouse.x + 1)/2 * this.width - ((this.sim.potentialStart + (this.sim.potentialEnd - this.sim.potentialStart) / 2) /  this.ratio) ;
+				this.sim.aChanged =  a/80 > 1 ? a/80 : 1;
+				//console.log(a / this.sim.a);
+				this.needsUpdate = 1;
+				this.lineWellReset();
+				this.updateSliders();
+				this.sim.calcNP2();
+				this.sim.calcP2();
+				//this.sim.potentialStart = a;
+			}else{
+				this.clicked = 0;
+
+			}
+			//console.log( ((this.mouse.y + 1) / 2 - this.move / this.height ) * (this.height  - this.move));
+			$('html,body').css('cursor', 'pointer');
+		} 
+		
+		if( this.clicked == 0 && this.needsUpdate == 1){
+			this.lineWellReset();
+			this.updateSliders();
+			this.sim.calcNP2();
+			this.sim.calcP2();
+			this.needsUpdate = 0;
 		}
 		
 		
-		// potential 
 		
-		this.raycaster.setFromCamera(this.mouse, this.camera);
-		intersects = this.raycaster.intersectObjects([this.lineWellU1, this.lineWellU2], true);
-		if (intersects.length > 0) {
-			//V = 2000/this.scaleProb*(this.mouse.y + -this.height/2 - this.move)
-			//console.log(2000/this.scaleProb*(this.mouse.y +this.height/2 - this.move));
-			//this.sim.U = 2000/this.scaleProb*(this.mouse.y +this.height/2 - this.move);
-			$('html,body').css('cursor', 'pointer');
-		} 
-		this.raycaster.setFromCamera(this.mouse, this.camera);
-		intersects = this.raycaster.intersectObjects([this.lineWellL, this.lineWellR], true);
-		if (intersects.length > 0) {
-			console.log("Change well width!");
-			$('html,body').css('cursor', 'pointer');
-		} 
+	}
+	
+	lineWellReset(){
+		
+		this.lineWellU1.geometry.boundingSphere = null;
+		this.lineWellU1.geometry.boundingBox = null;
+		this.lineWellU2.geometry.boundingSphere = null;
+		this.lineWellU2.geometry.boundingBox = null;
+		
+		this.lineWellL.geometry.boundingSphere = null;
+		this.lineWellL.geometry.boundingBox = null;
+		this.lineWellR.geometry.boundingSphere = null;
+		this.lineWellR.geometry.boundingBox = null;
 		
 	}
 
@@ -661,9 +795,9 @@ class RenderIt{
 			//this.scene.add( this.circleCL[i] );
 			
 		}
-		this.repairCircles();
+		//this.repairCircles();
 	}
-	/*  As the number of available states vary thorought different topologies of the quantum well,
+	/*  As the number of available states vary thorought different dimensions of the quantum well,
 	we need to check how many circles we actually want to draw! :)                               */
 	repairCircles(){
 		let val =  this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber;
@@ -701,9 +835,9 @@ class RenderIt{
 			
 			this.positionsWell[ i ] = (-this.width/2+i/(this.ratio*3))
 			if(this.drawing[0] == 1)
-				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/2000;
+				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/200;
 			else
-				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleWave*this.sim.V[i/3]/2000;
+				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleWave*this.sim.V[i/3]/200;
 			
 			this.positionsWell[ i+2 ] = 0;
 
@@ -714,18 +848,45 @@ class RenderIt{
 				
 	}
 	
+	addArrows(){
+		
+		console.log((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2);
+		
+		this.arrow1 = new TwoSideArrow(new THREE.Vector2((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2, 100));
+		this.scene.add( this.arrow1.sprite );
+		
+		this.arrow2 = new TwoSideArrow(new THREE.Vector2((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2, 100), 90);
+		this.scene.add( this.arrow2.sprite );
+
+
+		//this.arrow2 = new TwoSideArrow(new THREE.Vector2(10, 100));
+		//this.scene.add( this.arrow2.sprite );	
+
+		//this.arrow3 = new TwoSideArrow(new THREE.Vector2(100, 10));
+		//this.scene.add( this.arrow3.sprite );			
+	}
+	
+	updateArrows(){
+		this.arrow1.sprite.position.x = (this.lineWellU2Tab[0] + this.lineWellU2Tab[3])/2;
+		this.arrow1.sprite.position.y = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		
+		
+		this.arrow2.sprite.position.x = this.lineWellRTab[3];
+		this.arrow2.sprite.position.y = (-this.height/2 + this.move + -this.height/2 + this.move+ this.scaleProb*this.sim.U/200 )/2;
+	}
+	
 	updateInteractiveLines(){
 		let ratio = 2 / this.width;
 		this.lineWellU1Tab[0] = -this.width/2;
-		this.lineWellU1Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU1Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
 		this.lineWellU1Tab[2] = 0;
 		
 		this.lineWellU1Tab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
-		this.lineWellU1Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU1Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
 		this.lineWellU1Tab[5] = 0;
 		
 		this.lineWellLTab[0] = -this.width/2 + this.sim.potentialStart/this.ratio;
-		this.lineWellLTab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellLTab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
 		this.lineWellLTab[2] = 0;
 		
 		this.lineWellLTab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
@@ -743,18 +904,19 @@ class RenderIt{
 		this.lineWellRTab[0] = -this.width/2 + this.sim.potentialEnd/this.ratio;
 		this.lineWellRTab[1] = -this.height/2 + this.move;
 		this.lineWellRTab[2] = 0;
-		console.log(this.sim.potentialEnd);
+		//console.log(this.sim.potentialEnd);
 		this.lineWellRTab[3] = -this.width/2 + this.sim.potentialEnd/this.ratio;
-		this.lineWellRTab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000 ;
+		this.lineWellRTab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200 ;
 		this.lineWellRTab[5] = 0;
 		
 		this.lineWellU2Tab[0] = -this.width/2 + this.sim.potentialEnd/this.ratio;
-		this.lineWellU2Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU2Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
 		this.lineWellU2Tab[2] = 0;
 		
 		this.lineWellU2Tab[3] = this.width/2;
-		this.lineWellU2Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/2000;
+		this.lineWellU2Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
 		this.lineWellU2Tab[5] = 0;
+		this.updateArrows();
 	}
 	
 	rescale(){
@@ -807,71 +969,13 @@ var clicker = $("#mode");
 			});
 var abc = new RenderIt(1000);
 abc.init();
-let newNode = document.createElement('table');
-newNode.innerHTML += "<table><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
-for(let i=0; i < abc.sim.levels; i++){
-
-	let txt = (i + 1);
-	if((i + 1)<10){
-		txt = ' ' + (i + 1);
-	}
-	newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider_2" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider_2" /></td> </tr>';
-	
-	
-}
-newNode.innerHTML += "</table>"
-document.getElementById("psi_n_levels").appendChild( newNode );
-var psiArr = new Array(abc.sim.levels);
-var psiPhase = new Array(abc.sim.levels);
-var psiAmp = new Array(abc.sim.levels);
-for(let i=0; i < abc.sim.levels; i++){
-	
-	psiArr[i] =  document.getElementById('n' + (i+1));
-	psiAmp[i] =  document.getElementById('slider_amp' + (i+1));
-	
-	psiPhase[i] =  document.getElementById('slider_phase' + (i+1));
-	if(i != 0)
-		psiArr[i].checked = false;
-	else
-		psiArr[i].checked = true;
-	
-	psiArr[i].addEventListener( "change", 
-	function(ii){
-		abc.sim.time = 0;
-		abc.rescale();
-		if (this.checked) {
-			abc.sim.enabled[i] = 1;
-			abc.circleC[i].material.color.setHex( 0xff00ff );
-
-		}else{
-			abc.sim.enabled[i] = 0;
-			abc.circleC[i].material.color.setHex( 0x3b383d );
-		}
-		
-	});
-	
-	psiPhase[i].addEventListener("input", function(e) {
-		var target = (e.target) ? e.target : e.srcElement;
-		abc.sim.phases[i] = (target.value);
-		abc.sim.time = 0;
-	});
-	
-	psiAmp[i].addEventListener("input", function(e) {
-		if(psiArr[i].checked == true)
-			abc.rescale();
-		
-		var target = (e.target) ? e.target : e.srcElement;
-		abc.sim.amp[i] = (target.value);
-		abc.sim.time = 0;
-	});
-}
 
 var running = document.getElementById("running");
 var triangle = document.getElementById("triangle");
 var clearer = document.getElementById("clearer");
 var rescale = document.getElementById("rescale");
 var chRe = document.getElementById("chRe");
-var chDe = document.getElementById("chDe");
+//var chDe = document.getElementById("chDe");
 var chGrid = document.getElementById("chGrid");
 var sldierTime = document.getElementById("slider_time");
 var sliderA = document.getElementById("slider_a");
@@ -885,6 +989,7 @@ running.addEventListener( "change",
 			abc.sim.run = 0;
 		}
 });
+
 
 triangle.addEventListener( "click", 
 	function(){
@@ -940,13 +1045,11 @@ clearer.addEventListener( "click",
 			setAmp(ii, 1.414);
 		}
 });
-
+running.checked = true;
 sldierTime.addEventListener("input", function(e) {
 	var target = (e.target) ? e.target : e.srcElement;
 	abc.sim.timeAdd = (target.value);
 	
-	
-	abc.sim.time = 0;
 	
 });
 
@@ -985,7 +1088,7 @@ function setAmp(index, value){
 	psiAmp[index].value = value;
 	
 }
-
+/*
 chDe.addEventListener( "change", 
 function(){
 	if (this.checked) {
@@ -999,7 +1102,7 @@ function(){
 		chRe.checked = true;
 		abc.gridDraw = [0,1];
 	}
-});
+});*/
 
 chGrid.addEventListener( "change", 
 function(){
@@ -1015,17 +1118,42 @@ function(){
 	if (this.checked) {
 		abc.drawing[1] = 1;
 		abc.drawing[0] = 0;
-		chDe.checked = false;
+		//chDe.checked = false;
 		abc.gridDraw = [0,1];
 	}else{
 		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
-		chDe.checked = true;
+		//chDe.checked = true;
 		abc.gridDraw = [1,0];
 	}
 });
+abc.renderer.domElement.addEventListener('touchstart', function(e){
+      abc.mouseDown = 1;
+		
+		const rect = abc.theDiv.getBoundingClientRect();
+			if (e.changedTouches[0].pageX > rect.x && e.changedTouches[0].pageX < rect.x + rect.width) {
 
-chDe.checked = true;
+				if (e.changedTouches[0].pageY > rect.y && e.changedTouches[0].pageY < rect.y + rect.height) {
+
+					abc.mouseDr.x = abc.mouse.x - abc.mouseOld.x;
+					abc.mouseDr.y = abc.mouse.y - abc.mouseOld.y;
+					
+					abc.mouseOld.x = abc.mouse.x;
+					abc.mouseOld.y = abc.mouse.y;
+
+					abc.mouse.x = ((e.changedTouches[0].pageX - rect.x) / document.getElementById("canvas_holder").clientWidth) * 2 - 1;
+					abc.mouse.y = -((e.changedTouches[0].pageY - rect.y) / abc.height) * 2 + 1;
+				     //alert(abc.mouse.y) // alert pageX coordinate of touch point
+				}
+			}	
+		
+}, false);
+abc.renderer.domElement.addEventListener('touchend', function(event){
+
+	abc.mouseDown = 0;
+	abc.alreadyChecked = 0;
+}, false);
+//chDe.checked = true;
 chRe.checked = false;
 abc.renderer.domElement.addEventListener('mousedown', function(event){
 	event.preventDefault();
@@ -1120,7 +1248,10 @@ if (WEBGL.isWebGLAvailable()) {
 }
 
 
-
+ jQuery( window ).on( "swipeleft", function( event ) 
+  {
+    alert("Hi");
+  } );
 
 //Render.init();
 //	Render.destroy();

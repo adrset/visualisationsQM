@@ -17,11 +17,12 @@
 <body>
 
     <div id="nav" class="menu">
-        <span class="nav_title" ><a href="index.html">Fizyka kwantowa</a></span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div>
+        <span ><a class="nav_title" href="index.html">Fizyka kwantowa</a></span><div style="cursor:pointer; " class="nav_hamburger " onClick=" "></div>
 		 <div style="cursor:pointer; " class="nav_desktop">
 			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="index.html">Home</a></span>
-			<span class="nav_desktop_item">Nieskończona studnia potencjału</span>
+			<span class="nav_desktop_item current">Nieskończona studnia potencjału</span>
 			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="well2.html">Skończona studnia potencjału</a></span>
+			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="twowells.html">Dwie studnie</a></span>
 			<span class="nav_desktop_item"><a class="nav_desktop_item_a" href="gauss.html">Rozpraszanie paczki Gaussa</a></span>
 					 
 		 </div>
@@ -42,6 +43,9 @@
                <tr>
                   <td><a href="well2.html">Skończona studnia potencjału</a></td>
                </tr>
+			   <tr>
+                  <td><a class="nav_desktop_item_a" href="twowells.html">Dwie studnie</a></td>
+               </tr>
                <tr>
                   <td><a href="gauss.html" >Rozpraszanie paczki Gaussa</a></td>
                </tr>
@@ -55,22 +59,31 @@
          <div id="mode" class="hidden movable">
             <div class="sim_mode"></div>
          </div>
-         <div id="sim_mode_expand" class="hidden_mobile">
+         <div id="sim_mode_expand" class="hidden_mobile movable">
             <div id="sim_mode_expand_container">
-               <span class="sim_mode_expand_label">n   faza     amplituda</span>
                <div id="sim_mode_draw">
-                  <div id="psi_n_levels" class="hidden_desktop" ></div>
-				  <input id="running" type="checkbox" name="stopped" value="stopped"/>Ewolucja
-				 
-                  <input id="chDe" type="checkbox" name="density" value="density" checked />|&Psi;|<sup>2</sup>
-                  <input id="chRe" type="checkbox" name="re" value="re"/>Fala
-				  <input id="chGrid" type="checkbox" name="density" value="density" checked />Siatka
-				  <span class="sim_mode_expand_label">Szybkość</span><input type="range" min="0" max="0.005" value="0.001" step="0.00001" id="slider_time" class="sim_slider_2" />
-			<div >
-				  <button id="triangle" class="block_desktop">Trójkąt</button>
-				  <button id="clearer" class="block_desktop">Wyczyść</button>
-				  <button id="rescale" class="block_desktop">Przeskaluj</button>
+               
+							 <div id="mainCheckboxes">	
+<table class="checkboxTable"><tr>			
+					 <td class="oneof3"><div class="center">|&Psi;|<sup>2</sup> |  Fala  <input type="checkbox" id="chRe" style="display:none"/>
+					  <label for="chRe" class="toggle"><span></span></label></div></td>
+				 <td class="oneof3"><div class="center">Ewolucja<input type="checkbox" id="running" style="display:none"/>
+					  <label for="running" class="toggle"><span></span></label>  </div></td>
+
+					 <td class="oneof3"><div class="center">Siatka<input type="checkbox" id="chGrid" style="display:none"/>
+					  <label for="chGrid" class="toggle"><span></span></label></div></td>		
+					  
+</table></tr>
+                </div>
+				  <div id="mainSliders">
+				  <span class="sim_mode_expand_label">Szybkość</span><input type="range" min="0" max="0.005" value="0.001" step="0.00001" id="slider_time" class="sim_slider" />
+				  </div>
+			<div id="mainButtons">
+				  <button id="triangle" class="block_desktop button_menu">Trójkąt</button>
+				  <button id="clearer" class="block_desktop button_menu">Wyczyść</button>
+				  <button id="rescale" class="block_desktop button_menu">Przeskaluj</button>
                </div>
+			      <div id="psi_n_levels" class="" ></div>
                </div>
             </div>
          </div>
@@ -82,9 +95,6 @@
 
 	
 
-<div class='section options'>
-    
-</div>		
 		<script src="js/misc.js "></script>
 		<script src="js/InfWellAn.js "></script>
 	</body>
