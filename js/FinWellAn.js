@@ -31,7 +31,7 @@ var sliderU = document.getElementById("slider_U");
 class TwoSideArrow{
 	constructor( position, angle){
 		
-		let spriteMap = new THREE.TextureLoader().load( 'arrow.png' );
+		let spriteMap = new THREE.TextureLoader().load( 'images/arrow.png' );
 
 		let spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
 
