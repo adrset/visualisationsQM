@@ -8,10 +8,26 @@ function pown(x,y){
 	return xx;
 	
 }
-
+var psiArr = null;
+var psiPhase = null;
+var psiAmp = null;
 function toRad(alfa){
 		return alfa * Math.PI / 180;
 }
+
+var running = document.getElementById("running");
+var triangle = document.getElementById("triangle");
+var clearer = document.getElementById("clearer");
+var rescale = document.getElementById("rescale");
+var chRe = document.getElementById("chRe");
+var chMod = document.getElementById("chMod");
+
+var energies = document.getElementById("energies");
+//var chDe = document.getElementById("chDe");
+var chGrid = document.getElementById("chGrid");
+var sldierTime = document.getElementById("slider_time");
+var sliderA = document.getElementById("slider_a");
+var sliderU = document.getElementById("slider_U");
 class TwoSideArrow{
 	constructor( position, angle){
 		
@@ -44,8 +60,9 @@ class Simulation {
 		this.evenSolutionsNumber = 0;
 		this.N = N;
 		this.dt = 0.0001;
+		this.energies = new Array(100);
 		this.n = 1;
-		this.m = 1;
+		this.m = 0.5;
 		this.U = 1;
 		this.L = 1;
 		this.hbar = 1;
@@ -54,7 +71,7 @@ class Simulation {
 		this.ratio = this.N / this.width;
 		this.re = [];
 		this.im = [];
-		this.levels = screen.width > 961 ? 10 : 10;
+		this.levels = 15;
 		this.reArray = new Array(this.levels);
 		this.imArray = new Array(this.levels);
 		this.pArray = new Array(this.levels);
@@ -81,6 +98,7 @@ class Simulation {
 		for(let ii = 0; ii < this.levels; ii++){
 			this.reArray[ii] = new Array(this.N);
 			this.imArray[ii] = new Array(this.N);
+			this.pArray[ii] = new Array(this.N);
 			this.enabled[ii] = 0;
 			this.amp[ii] = Math.sqrt(2);
 			this.phases[ii]  = 0; 
@@ -97,10 +115,10 @@ class Simulation {
 		// liczba rozwiazan p - stosunek R + Pi/2 do Pi/2 (czyli ile sie miesci tangensow)
 
 		//patzyste
-		let R = this.a*this.a*this.U;
+		let R = this.a*this.a*this.U*2*this.m/(this.hbar * this.hbar);
 		let solutions = 1+ parseInt((R )/ (Math.PI));
 		
-		console.log("Computing possible states for odd waves ( " + solutions + " ).");
+		console.log("Computing possible states for odd waves ( " + solutions + " )." + R);
 				
 		this.oddSolutionsNumber = solutions;
 		
@@ -135,9 +153,11 @@ class Simulation {
 			let ksi = k;
 			let eta = k*Math.tan(k); // eta
 			this.oddSolutions[i] = {"ksi": ksi, "eta" : eta}
+
 			this.oddSolutionsKappa[i] = eta / this.a;
 			this.oddSolutionsK[i] = ksi / this.a;
-			//console.log("ksi: " +ksi +  ", eta:"+ eta);
+			this.energies[2*i]=( this.oddSolutionsK[i]*this.oddSolutionsK[i]*this.hbar * this.hbar / (2*this.m));
+			console.log("->odd" + this.energies[2*i]);
 			
 		}
 
@@ -147,13 +167,13 @@ class Simulation {
 	
 	calcP2(){
 
-		let R = this.a*this.a*this.U;
+		let R = this.a*this.a*this.U*2*this.m/(this.hbar * this.hbar);
 		if(R < Math.PI / 2)
 			return 0;
 		
 		
 		
-		let solutions = Math.floor((R )/ (Math.PI));
+		let solutions = parseInt((R )/ (Math.PI));
 		console.log("Computing possible states for even waves ( " + solutions + " ).");
 		this.evenSolutionsNumber = solutions;
 		for(let i=0; i < solutions; i++){
@@ -188,7 +208,8 @@ class Simulation {
 			//console.log("ksi: " +ksi +  ", eta:"+ eta);
 			this.evenSolutionsKappa[i] = eta / this.a;
 			this.evenSolutionsK[i] = ksi / this.a;	
-			
+			this.energies[i*2+1] = ( this.evenSolutionsK[i]*this.evenSolutionsK[i]*this.hbar * this.hbar / (2*this.m) );
+			console.log("->evem" + this.energies[i*2+1]);
 		}
 
 		let t1 = performance.now();
@@ -260,38 +281,42 @@ class Simulation {
 
 				//console.log(wellStart / maxWidth * this.N);
 				toAnnounce += "	&Psi;<sub>" + (jj+1) + "</sub> + ";
+			}
 				for (let ii = 0; ii < parseInt(wellStart / maxWidth * this.N); ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.reArray[jj][ii] =  this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							//console.log(ii);
 							this.x[ii] = ii;
 							this.V[ii] = this.U;
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.imArray[jj][ii] =  this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 1)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.pArray[jj][ii] = this.imArray[jj][ii]*this.imArray[jj][ii] + this.reArray[jj][ii]*this.reArray[jj][ii];				
 				}
 				
 				this.potentialStart = parseInt(wellStart / maxWidth * this.N);
 				//console.log(this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 1) + " vs " + this.calculateStationary(jj+1, -maxWidth/2 + parseInt(wellStart / maxWidth * this.N)*delta, 2));
 				
 				for (let ii = parseInt(wellStart / maxWidth * this.N); ii < parseInt(wellEnd / maxWidth * this.N); ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.reArray[jj][ii] =  this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							this.x[ii] = ii;
 							//console.log(ii);
 							//console.log(-maxWidth/2 + ii*delta);
 							this.V[ii] = 0;
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.imArray[jj][ii] = this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 2)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.pArray[jj][ii] = this.imArray[jj][ii]*this.imArray[jj][ii] + this.reArray[jj][ii]*this.reArray[jj][ii];				
 				}
 				//console.log(parseInt(wellWidth / maxWidth * this.N));
 
 				this.potentialEnd = parseInt(wellEnd / maxWidth * this.N);
 				for (let ii =  parseInt(wellEnd / maxWidth * this.N); ii < this.N+1; ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.reArray[jj][ii] =  this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.cos(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
 							this.x[ii] = ii;
 							this.V[ii] = this.U;
 							//console.log(ii);
 							//console.log(-maxWidth/2 + ii*delta);
-							this.imArray[jj][ii] = this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.imArray[jj][ii] =  this.amp[jj] *this.calculateStationary(jj+1, -maxWidth/2 + ii*delta, 3)*(Math.sin(this.time*(jj+1)*(jj+1) + this.toRad(this.phases[jj])));
+							this.pArray[jj][ii] = this.imArray[jj][ii]*this.imArray[jj][ii] + this.reArray[jj][ii]*this.reArray[jj][ii];
 				}
 
-			}
+			
 		}
 		
 	
@@ -379,6 +404,7 @@ class RenderIt{
 		this.raycaster = null;
 		this.t = 0;
 		this.N = N;
+		this.currentHover = -1;
 		this.gridEnabled = 1;
 		this.gridDraw = [1,0];
 		this.width = document.getElementById("canvas_holder").clientWidth;
@@ -389,6 +415,7 @@ class RenderIt{
 		this.positionsIm = new Float32Array(this.N * 3);
 		this.positionsWell = new Float32Array(this.N * 3);
 		this.renderer = null;
+		this.drawEnergies = 1;
 		this.scene = null;
 		this.gridHelper = null;
 		this.camera = null;
@@ -399,22 +426,26 @@ class RenderIt{
 		this.lineV = null;
 		this.needsUpdate = 0;
 		this.move = 0;
+		this.currentHover2 = -1;
 		this.lineWell = null;
 		this.lineWellU1 = null;
 		this.lineWellL = null;
 		this.lineWellD = null; 
 		this.lineWellR = null;
 		this.lineWellU2 = null;
+		this.lineE = null;
 		this.lineWellU1Tab = new Float32Array(2 * 3);
 		this.lineWellLTab = new Float32Array(2 * 3);
 		this.lineWellDTab = new Float32Array(2 * 3);
 		this.lineWellRTab = new Float32Array(2 * 3);
 		this.lineWellU2Tab = new Float32Array(2 * 3);
+		this.lineETab = new Float32Array(2 * 3);
 		this.overview = 0;
-		
+		this.doRescale = 0;
 		this.scaleProb = 200000;
 		this.scaleWave = 500000;
-		this.alreadyChecked == 0;
+		this.scaleWell = 130000;
+		this.alreadyChecked = 0;
 		this.lineIm = null;
 		this.sim = new Simulation(this.N);
 		this.ratio = this.N / this.width;
@@ -434,6 +465,13 @@ class RenderIt{
 			this.circles[i] = new Float32Array(this.N * this.segmentCount);
 		}
 
+
+		this.linesE = new Array(this.sim.levels);
+		this.linesETabs = new Array(this.sim.levels);
+		
+		for(let i=0;i<this.sim.levels; i++){
+			this.linesETabs[i] = new Float32Array(6);
+		}
     }
 	
 	resizeGrid(){
@@ -526,8 +564,8 @@ class RenderIt{
 		this.lineWellL = null;
 		this.lineWellR = null;
 		this.lineWellU2 = null;
-		var materialWell = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
-		
+		let materialWell = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
+		let materialE = new THREE.LineBasicMaterial({ color: 0xff0f, linewidth: 2 });
 		
 		let geometryU1 = new THREE.BufferGeometry();
 		geometryU1.addAttribute('position', new THREE.BufferAttribute(this.lineWellU1Tab, 3));
@@ -549,14 +587,26 @@ class RenderIt{
 		geometryU2.addAttribute('position', new THREE.BufferAttribute(this.lineWellU2Tab, 3));
 		this.lineWellU2 = new THREE.Line( geometryU2, materialWell );
 		
+		let geometryE = new THREE.BufferGeometry();
+		geometryE.addAttribute('position', new THREE.BufferAttribute(this.lineETab, 3));
+		this.lineE = new THREE.Line( geometryE, materialE );
+		
 		this.scene.add(this.lineWellU1);
 		this.scene.add(this.lineWellL);
 		this.scene.add(this.lineWellD);
 		this.scene.add(this.lineWellR);
 		this.scene.add(this.lineWellU2);
+		this.scene.add(this.lineE);
 		this.addArrows();
 		//
-		
+		for(let i=0;i<this.sim.levels; i++){
+			let materialE = new THREE.LineBasicMaterial({ color: 0xff0f, linewidth: 2 });
+			this.linesETabs[i] = new Float32Array(6);
+			let geometriesE = new THREE.BufferGeometry();
+			geometriesE.addAttribute('position', new THREE.BufferAttribute(this.linesETabs[i], 3));
+			this.linesE[i] = new THREE.Line( geometriesE, materialE );
+			this.scene.add(this.linesE[i]);
+		}
 		geometry4.setDrawRange(0, this.N);
 		this.lineIm = new THREE.Line( geometry4, material4 );
 
@@ -599,8 +649,9 @@ class RenderIt{
 	}
 	
 	updateSliders(){
-		let levels = abc.sim.currentMaxLevel < 10 ? abc.sim.currentMaxLevel : 10;
-		let newNode = document.createElement('table');
+		let levels = this.sim.currentMaxLevel < 15 ? this.sim.currentMaxLevel : 15;
+		let newNode = document.createElement('table'); 
+		
 		document.getElementById("psi_n_levels").innerHTML = "";
 		newNode.innerHTML += "<table style='psi_levels'><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
 		let sols = this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber < 15 ? this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber : 15;
@@ -610,29 +661,28 @@ class RenderIt{
 			if((i + 1)<10){
 				txt = ' ' + (i + 1);
 			}
-			newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
+			newNode.innerHTML += '<tr><td><label class="control control-checkbox"><input type="checkbox" id="n' + (i + 1) + '" checked="checked" /><div id="nhover' + (i + 1) + '" class="control_indicator"></div></label>' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
 	
 		}
 		newNode.innerHTML += "</table>"
 		document.getElementById("psi_n_levels").appendChild( newNode );
-		var psiArr = new Array(sols);
-		var psiPhase = new Array(sols);
-		var psiAmp = new Array(sols);
+		psiArr = new Array(sols);
+		psiPhase = new Array(sols);
+		psiAmp = new Array(sols);
 		for(let i=0; i < sols; i++){
 			
 			psiArr[i] =  document.getElementById('n' + (i+1));
 			psiAmp[i] =  document.getElementById('slider_amp' + (i+1));
 			
 			psiPhase[i] =  document.getElementById('slider_phase' + (i+1));
-			if(i != 0)
-				psiArr[i].checked = false;
-			else
-				psiArr[i].checked = true;
+			
+				psiArr[i].checked = abc.sim.enabled[i] == 1 ? true : false;
+			
 			
 			psiArr[i].addEventListener( "change", 
 			function(ii){
 				abc.sim.time = 0;
-				abc.rescale();
+				abc.doRescale = 1;
 				if (this.checked) {
 					abc.sim.enabled[i] = 1;
 					
@@ -642,6 +692,17 @@ class RenderIt{
 					
 				}
 				
+			});
+
+
+			$("#nhover" + (i+1)).on("mouseover",function(){
+		
+				abc.currentHover = i;
+			});
+
+			$("#nhover" + (i+1)).on("mouseout",function(){
+	
+				abc.currentHover = -1;
 			});
 			
 			psiPhase[i].addEventListener("input", function(e) {
@@ -659,6 +720,35 @@ class RenderIt{
 				abc.sim.time = 0;
 			});
 		}
+
+			function setAmp(index, value){
+				abc.sim.amp[index] = value;
+				abc.psiAmp[index].value = value;
+	
+			}
+
+		clearer.addEventListener( "click", 
+		function(){
+		
+			for(let ii = 0; ii< abc.sim.levels; ii++){
+				if(ii == 0){
+					psiArr[ii].checked = true;
+					abc.sim.enabled[ii] = 1;
+				
+				}else{
+					psiArr[ii].checked = false;
+					abc.sim.enabled[ii] = 0;
+				
+				}
+			}
+			abc.sim.time = 0;
+			running.checked = true;
+			abc.sim.run = 1;
+
+			for(let ii = 0; ii< abc.sim.levels; ii++){
+				setAmp(ii, 1.414);
+			}
+		});
 		
 	}
 	
@@ -679,9 +769,10 @@ class RenderIt{
 				//if(this.drawing[0] == 1)
 				//this.mouse.y + 1)/2 * this.height =  -this.height/2 + this.scaleProb*this.U/2000;
 				this.needsUpdate = 1;
-				
+				this.sim.calcNP2();
+				this.sim.calcP2();
 			// 
-				this.sim.U = ((this.mouse.y + 1)/2 * this.height )*200/this.scaleProb;
+				this.sim.U = ((this.mouse.y + 1)/2 * this.height )*200/this.scaleWell;
 			}else{
 				this.clicked = 0;
 				
@@ -714,8 +805,6 @@ class RenderIt{
 				this.sim.aChanged =  a/80 > 1 ? a/80 : 1;
 				//console.log(a / this.sim.a);
 				this.needsUpdate = 1;
-				this.lineWellReset();
-				this.updateSliders();
 				this.sim.calcNP2();
 				this.sim.calcP2();
 				//this.sim.potentialStart = a;
@@ -725,7 +814,23 @@ class RenderIt{
 			}
 			//console.log( ((this.mouse.y + 1) / 2 - this.move / this.height ) * (this.height  - this.move));
 			$('html,body').css('cursor', 'pointer');
-		} 
+		}
+
+		intersects = this.raycaster.intersectObjects(this.linesE, true);
+		if (intersects.length > 0) {
+			let index = this.linesE.indexOf(intersects[ 0 ].object);
+			$('html,body').css('cursor', 'pointer');
+			this.currentHover2 = index;
+			if(this.mouseDown == 1 && this.alreadyChecked == 0){
+				this.alreadyChecked = 1;
+				
+				
+				this.sim.enabled[index] = this.sim.enabled[index] == 1 ? 0 : 1;
+				psiArr[index].checked = this.sim.enabled[index] == 1 ? 1 : 0;
+			}
+		} else {
+			this.currentHover2 = -1;
+		}
 		
 		if( this.clicked == 0 && this.needsUpdate == 1){
 			this.lineWellReset();
@@ -750,6 +855,12 @@ class RenderIt{
 		this.lineWellL.geometry.boundingBox = null;
 		this.lineWellR.geometry.boundingSphere = null;
 		this.lineWellR.geometry.boundingBox = null;
+		
+		for(let i=0;i<abc.sim.levels; i++){
+
+			this.linesE[i].geometry.boundingSphere = null;
+			this.linesE[i].geometry.boundingBox = null;
+		}
 		
 	}
 
@@ -818,28 +929,108 @@ class RenderIt{
 	updatePositions(){
 				
 		this.sim.update();
+		if(this.doRescale == 1){
+			this.rescale();
+			this.doRescale = 0;
+		}
 
-		for(let i=0;i<3 *( this.N+1); i+=3){
-			this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
-			//console.log(this.scaleWave*this.sim.re[i/3]);
-			this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3];
-			this.positions[ i+2 ] = 0;
+		if(this.currentHover < 0 && this.currentHover2 < 0){
 
-			this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsRe[ i+1 ] = -this.height/2 + this.move+ this.scaleProb*this.sim.p[i/3];
-			this.positionsRe[ i+2 ] = 0;
+			for(let i=0;i<3 *( this.N+1); i+=3){
+				this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
+				//console.log(this.scaleWave*this.sim.re[i/3]);
+				this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3];
+				this.positions[ i+2 ] = 0;
+
+				this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsRe[ i+1 ] = -this.height/2 + this.move+ this.scaleProb*this.sim.p[i/3];
+				this.positionsRe[ i+2 ] = 0;
 			
-			this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsIm[ i+1 ] =  (this.scaleWave*this.sim.im[i/3]);
-			this.positionsIm[ i+2 ] = 0;
+				this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsIm[ i+1 ] =  (this.scaleWave*this.sim.im[i/3]);
+				this.positionsIm[ i+2 ] = 0;
+				this.lineETab[0] = -this.width/2;
+				this.lineETab[1] =-this.height/2;
+				this.lineETab[2] = 0;
+				
+				this.lineETab[3] = +this.width/2;
+				this.lineETab[4] =-this.height/2;
+				this.lineETab[5] = 0;
 			
-			this.positionsWell[ i ] = (-this.width/2+i/(this.ratio*3))
-			if(this.drawing[0] == 1)
-				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleProb*this.sim.V[i/3]/200;
-			else
-				this.positionsWell[ i+1 ] =  -this.height/2 + this.move+ this.scaleWave*this.sim.V[i/3]/200;
+
+
+			}
 			
-			this.positionsWell[ i+2 ] = 0;
+			for(let i=0;i<this.sim.levels; i++){
+				if(this.sim.enabled[i]){
+					this.linesE[i].material.color = new THREE.Color( 0xff844b );    
+				}else{
+					this.linesE[i].material.color = new THREE.Color( 0xaf0f );    
+				
+				}
+				let sols = this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber;
+				let ene = this.sim.energies[i];
+				let max = this.sim.energies[sols-1];
+				max = (max +0.3) / this.sim.U;
+				console.log(max);
+				this.linesE[i].material.needsUpdate = true;
+				
+				if(this.drawEnergies == 0  || i > sols - 1){
+					ene = -100000;
+				}
+				
+				
+	
+			
+				this.linesETabs[i][0] = -this.width/2;
+				this.linesETabs[i][1] =-this.height/2 + this.scaleWell*ene/200 / max;
+				this.linesETabs[i][2] = 0;
+				
+				this.linesETabs[i][3] = +this.width/2;
+				this.linesETabs[i][4] =-this.height/2 + this.scaleWell*ene/200 / max;
+				this.linesETabs[i][5] = 0;
+			
+			}
+		}else{
+			
+			
+			
+			let hover = this.currentHover > -1 ? this.currentHover : this.currentHover2;
+			let vec = this.rescaleTmp(hover);
+			for(let i=0;i<3 *( this.N+1); i+=3){
+				this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
+				//console.log(this.scaleWave*this.sim.re[i/3]);
+				this.positions[ i+1 ] = vec.y*this.sim.reArray[hover][i/3];
+				this.positions[ i+2 ] = 0;
+
+				this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsRe[ i+1 ] = -this.height/2 + this.move+ vec.x*this.sim.pArray[hover][i/3];
+				this.positionsRe[ i+2 ] = 0;
+			
+				this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsIm[ i+1 ] =  (vec.y*this.sim.imArray[hover][i/3]);
+				this.positionsIm[ i+2 ] = 0;
+			
+				
+
+				
+
+			}
+			let sols = this.sim.oddSolutionsNumber + this.sim.evenSolutionsNumber;
+	
+			let ene = this.sim.energies[hover];
+			let max = this.sim.energies[sols-1];
+			max = (max +0.3) / this.sim.U;
+			console.log(max);
+			this.linesE[hover].material.color = new THREE.Color( 0xf4c542 );         
+			this.linesE[hover].material.needsUpdate = true;
+			this.linesETabs[hover][1] =-this.height/2 + this.scaleWell*ene/200 / max;
+			this.linesETabs[hover][4] =-this.height/2 +  this.scaleWell*ene/200 / max;
+
+		
+		
+		console.log(sols);
+	
 
 
 		}
@@ -868,25 +1059,25 @@ class RenderIt{
 	
 	updateArrows(){
 		this.arrow1.sprite.position.x = (this.lineWellU2Tab[0] + this.lineWellU2Tab[3])/2;
-		this.arrow1.sprite.position.y = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.arrow1.sprite.position.y = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		
 		
 		this.arrow2.sprite.position.x = this.lineWellRTab[3];
-		this.arrow2.sprite.position.y = (-this.height/2 + this.move + -this.height/2 + this.move+ this.scaleProb*this.sim.U/200 )/2;
+		this.arrow2.sprite.position.y = (-this.height/2 + this.move + -this.height/2 + this.move+ this.scaleWell*this.sim.U/200 )/2;
 	}
 	
 	updateInteractiveLines(){
 		let ratio = 2 / this.width;
 		this.lineWellU1Tab[0] = -this.width/2;
-		this.lineWellU1Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.lineWellU1Tab[1] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		this.lineWellU1Tab[2] = 0;
 		
 		this.lineWellU1Tab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
-		this.lineWellU1Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.lineWellU1Tab[4] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		this.lineWellU1Tab[5] = 0;
 		
 		this.lineWellLTab[0] = -this.width/2 + this.sim.potentialStart/this.ratio;
-		this.lineWellLTab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.lineWellLTab[1] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		this.lineWellLTab[2] = 0;
 		
 		this.lineWellLTab[3] = -this.width/2 + this.sim.potentialStart/this.ratio;
@@ -906,15 +1097,15 @@ class RenderIt{
 		this.lineWellRTab[2] = 0;
 		//console.log(this.sim.potentialEnd);
 		this.lineWellRTab[3] = -this.width/2 + this.sim.potentialEnd/this.ratio;
-		this.lineWellRTab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200 ;
+		this.lineWellRTab[4] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200 ;
 		this.lineWellRTab[5] = 0;
 		
 		this.lineWellU2Tab[0] = -this.width/2 + this.sim.potentialEnd/this.ratio;
-		this.lineWellU2Tab[1] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.lineWellU2Tab[1] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		this.lineWellU2Tab[2] = 0;
 		
 		this.lineWellU2Tab[3] = this.width/2;
-		this.lineWellU2Tab[4] = -this.height/2 + this.move+ this.scaleProb*this.sim.U/200;
+		this.lineWellU2Tab[4] = -this.height/2 + this.move+ this.scaleWell*this.sim.U/200;
 		this.lineWellU2Tab[5] = 0;
 		this.updateArrows();
 	}
@@ -927,26 +1118,54 @@ class RenderIt{
 		let minP = Math.abs(Math.min.apply(Math,this.sim.p));
 		let minR = Math.abs(Math.min.apply(Math,this.sim.re));
 		let minI = Math.abs(Math.min.apply(Math,this.sim.im));
-		console.log(" min1: " + minR + " min2: " + minI + " max1: " + maxR + " max2: " + maxI);
+		//console.log(" min1: " + minR + " min2: " + minI + " max1: " + maxR + " max2: " + maxI);
 		let mP = maxP;
 		let mR = maxR > minR ? maxR : minR;
 		let mI = maxI > minI ? maxI : minI;
-		console.log(" maxR: " + mR + " maxI: " + mI);
+		//console.log(" maxR: " + mR + " maxI: " + mI);
 		let maxHeight = this.height-this.move;
 		let waveMax = mR > mI ? mR : mI;
-		console.log(" maxWave: " + waveMax);
+		//console.log(" maxWave: " + waveMax);
 		let scaleProb =  (0.5 * maxHeight / mP);
-		this.scaleWave = (0.4*maxHeight/waveMax);
-		this.scaleProb = scaleProb;
 		
-			
+		
+		this.scaleWave = Number.isNaN((0.4*maxHeight/waveMax)) ? this.scaleWave : (0.4*maxHeight/waveMax);
+		this.scaleProb =  Number.isNaN(scaleProb) ? this.scaleProb : scaleProb;
+		
+		this.lineWellReset();
 		
 		this.resizeGrid();
 		
 	}
+
+	rescaleTmp(index){
+		let maxP = Math.max.apply(Math,this.sim.pArray[index]);
+		let maxR = Math.max.apply(Math,this.sim.reArray[index]);
+		let maxI = Math.max.apply(Math,this.sim.imArray[index]);
+		
+		let maxHeight = this.height-this.move;
+		
+		let scaleWave1 = Math.abs(0.4 * maxHeight / maxR);
+		let scaleWave2 =  Math.abs(0.4 * maxHeight / maxI);
+		
+		let scaleProb =  Math.abs(0.5 * maxHeight / maxP);
+		var vec = new THREE.Vector2();
+		vec.x = scaleProb;
+		if(scaleWave1 < scaleWave2)
+			vec.y = scaleWave1;
+		else
+			vec.y = scaleWave2;
+		
+		return vec;
+		
+	}
 	
 };
+function setAmp(index, value){
+	abc.sim.amp[index] = value;
+	//abc.psiAmp[index].value = value;
 
+}
 
  $("#mode").removeClass("hidden");
  document.querySelector(".sim_mode").innerHTML = "Opcje"; 
@@ -970,16 +1189,7 @@ var clicker = $("#mode");
 var abc = new RenderIt(1000);
 abc.init();
 
-var running = document.getElementById("running");
-var triangle = document.getElementById("triangle");
-var clearer = document.getElementById("clearer");
-var rescale = document.getElementById("rescale");
-var chRe = document.getElementById("chRe");
-//var chDe = document.getElementById("chDe");
-var chGrid = document.getElementById("chGrid");
-var sldierTime = document.getElementById("slider_time");
-var sliderA = document.getElementById("slider_a");
-var sliderU = document.getElementById("slider_U");
+
 
 running.addEventListener( "change", 
 	function(){
@@ -999,13 +1209,13 @@ triangle.addEventListener( "click",
 				if(ii < 20){
 					psiArr[ii].checked = true;
 					abc.sim.enabled[ii] = 1;
-					abc.circleC[ii].material.color.setHex( 0xff00ff );
+					
 				}
 
 			}else{
 				psiArr[ii].checked = false;
 				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x3b383d );
+				
 			}
 		}
 		abc.sim.time = 0;
@@ -1023,28 +1233,7 @@ triangle.addEventListener( "click",
 		setAmp(18, -8 * Math.sqrt(3) / ( 361  * Math.PI * Math.PI));
 });
 
-clearer.addEventListener( "click", 
-	function(){
-		
-		for(let ii = 0; ii< abc.sim.levels; ii++){
-			if(ii == 0){
-				psiArr[ii].checked = true;
-				abc.sim.enabled[ii] = 1;
-				abc.circleC[ii].material.color.setHex( 0xff00ff );
-			}else{
-				psiArr[ii].checked = false;
-				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x3b383d );
-			}
-		}
-		abc.sim.time = 0;
-		running.checked = true;
-		abc.sim.run = 1;
 
-		for(let ii = 0; ii< abc.sim.levels; ii++){
-			setAmp(ii, 1.414);
-		}
-});
 running.checked = true;
 sldierTime.addEventListener("input", function(e) {
 	var target = (e.target) ? e.target : e.srcElement;
@@ -1055,10 +1244,10 @@ sldierTime.addEventListener("input", function(e) {
 
 sliderA.addEventListener("input", function(e) {
 	var target = (e.target) ? e.target : e.srcElement;
-	abc.sim.a = parseFloat(target.value);
+	abc.sim.aChanged = parseFloat(target.value);
 	abc.sim.calcNP2();
 	abc.sim.calcP2();
-	abc.repairCircles();
+	//abc.repairCircles();
 	//abc.rescale();
 	//abc.resizeGrid();
 	abc.sim.time = 0;
@@ -1070,7 +1259,7 @@ sliderU.addEventListener("input", function(e) {
 	abc.sim.U = parseFloat(target.value);
 	abc.sim.calcNP2();
 	abc.sim.calcP2();
-	abc.repairCircles();
+	//abc.repairCircles();
 	//abc.rescale();
 	//abc.resizeGrid();
 	abc.sim.time = 0;
@@ -1083,11 +1272,7 @@ rescale.addEventListener( "click", function(){
 		
 });
 
-function setAmp(index, value){
-	abc.sim.amp[index] = value;
-	psiAmp[index].value = value;
-	
-}
+
 /*
 chDe.addEventListener( "change", 
 function(){
@@ -1113,20 +1298,43 @@ function(){
 	}
 });
 
+
+energies.checked = true;
+energies.addEventListener( "change", 
+function(){
+	if (this.checked) {
+		abc.drawEnergies = 1;
+	}else{
+		abc.drawEnergies = 0;
+	}
+});
+
+
 chRe.addEventListener( "change", 
 function(){
 	if (this.checked) {
-		abc.drawing[1] = 1;
-		abc.drawing[0] = 0;
-		//chDe.checked = false;
-		abc.gridDraw = [0,1];
-	}else{
-		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
+		//chDe.checked = false;
+				abc.gridDraw = [0,1];
+	}else{
+		abc.drawing[0] = 0;
 		//chDe.checked = true;
 		abc.gridDraw = [1,0];
 	}
 });
+chMod.addEventListener( "change", 
+function(){
+	if (this.checked) {
+	
+		abc.drawing[1] = 1;
+		
+		abc.gridDraw = [1,0];
+	}else{
+		abc.drawing[1] = 0;
+		abc.gridDraw = [0,1];
+	}
+});
+
 abc.renderer.domElement.addEventListener('touchstart', function(e){
       abc.mouseDown = 1;
 		
@@ -1154,7 +1362,7 @@ abc.renderer.domElement.addEventListener('touchend', function(event){
 	abc.alreadyChecked = 0;
 }, false);
 //chDe.checked = true;
-chRe.checked = false;
+chRe.checked = true;
 abc.renderer.domElement.addEventListener('mousedown', function(event){
 	event.preventDefault();
 	abc.mouseDown = 1;
@@ -1202,6 +1410,11 @@ this.animate = function() {
 			abc.lineWellD.geometry.attributes.position.needsUpdate = true;
 			abc.lineWellR.geometry.attributes.position.needsUpdate = true;
 			abc.lineWellU2.geometry.attributes.position.needsUpdate = true;
+			
+			for(let i=0;i<abc.sim.levels; i++){
+				abc.linesE[i].geometry.attributes.position.needsUpdate = true;
+				
+			}
 			
 			abc.checkIntersections();
 			if(abc.drawing[0] == 1){

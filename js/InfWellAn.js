@@ -12,7 +12,7 @@ class Simulation {
 		this.re = [];
 		this.im = [];
 		
-		this.levels = screen.width > 961 ? 10 : 10;
+		this.levels = screen.width > 961 ? 15 : 15;
 		console.log(this.levels);
 		this.reArray = new Array(this.levels);
 		this.imArray = new Array(this.levels);
@@ -34,6 +34,7 @@ class Simulation {
 		for(let ii = 0; ii < this.levels; ii++){
 			this.reArray[ii] = new Array(this.N);
 			this.imArray[ii] = new Array(this.N);
+			this.pArray[ii] = new Array(this.N);
 			this.enabled[ii] = 0;
 			this.amp[ii] = Math.sqrt(2);
 			this.phases[ii]  = 0; 
@@ -53,7 +54,7 @@ class Simulation {
 	
 	calculateStationaryEnergy(n){
 		
-		return n*n * Math.PI * Math.PI / (2* this.m * this.L * this.L);
+		return n*n * Math.PI * Math.PI * this.hbar * this.hbar/ (2* this.m * this.L * this.L);
 		
 	}
 
@@ -63,14 +64,17 @@ class Simulation {
 		for(let jj = 0; jj< this.levels; jj++){
 			
 			if(this.enabled[jj] == 1){
-				toAnnounce += "	&Psi;<sub>" + (jj+1) + "</sub> + ";
-				for (let ii = 0; ii < this.N + 1; ii++){
-							this.reArray[jj][ii] = this.calculateStationary(jj + 1, (ii ))*(Math.cos(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
-							this.x[ii] = ii;
-							this.imArray[jj][ii] = this.calculateStationary(jj + 1, (ii))*(Math.sin(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
-							this.V[ii] = 10;
-				}
+				toAnnounce += "	c<sub>" + (jj+1) + "</sub>&Psi;<sub>" + (jj+1) + "</sub> + ";
+
 			}
+			for (let ii = 0; ii < this.N + 1; ii++){
+						this.reArray[jj][ii] = this.calculateStationary(jj + 1, (ii ))*(Math.cos(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
+						this.x[ii] = ii;
+						this.imArray[jj][ii] = this.calculateStationary(jj + 1, (ii))*(Math.sin(this.time*(jj + 1)*(jj + 1) + this.toRad(this.phases[jj])));
+						this.V[ii] = 10;
+						this.pArray[jj][ii] = this.imArray[jj][ii]*this.imArray[jj][ii] + this.reArray[jj][ii]*this.reArray[jj][ii];
+			}
+			
 		}
 		if(this.run == 1){
 			this.time+=parseFloat(this.timeAdd);
@@ -94,6 +98,7 @@ class Simulation {
 				if(this.enabled[jj] == 1){
 					this.im[ii] += this.imArray[jj][ii];
 					this.re[ii] += this.reArray[jj][ii];
+					
 				}
 			}
 			
@@ -146,6 +151,8 @@ class Simulation {
 
 class RenderIt{
 	constructor(N) {
+		this.currentHover = -1;
+		this.currentHover2 = -1;
 		this.mouseDown = 0;
 		this.raycaster = null;
 		this.t = 0;
@@ -159,7 +166,7 @@ class RenderIt{
 		this.positions = new Float32Array(this.N * 3);
 		this.positionsRe = new Float32Array(this.N * 3);
 		this.positionsIm = new Float32Array(this.N * 3);
-		this.positionsWell = new Float32Array(this.N * 3);
+		this.positionsWell = new Float32Array(12);
 		this.renderer = null;
 		this.scene = null;
 		this.gridHelper = null;
@@ -167,12 +174,13 @@ class RenderIt{
 		this.hover = 0;
 		this.animate = null;
 		this.line = null;
+		this.offset = 10;
 		this.lineRe = null;
 		this.move = 0;
 		this.lineWell = null;
 		this.scaleProb = 200000;
 		this.scaleWave = 50;
-		this.alreadyChecked == 0;
+		this.alreadyChecked = 0;
 		this.lineIm = null;
 		this.sim = new Simulation(this.N);
 		this.ratio = this.N / this.width;
@@ -187,9 +195,19 @@ class RenderIt{
 		this.mouse = new THREE.Vector2();
 		this.theDiv = null;
 		this.desktop = 0;
-		
+		this.doRescale = 0;
+		this.lineETab = new Float32Array(2 * 3);
+		this.drawEnergies = 1;
+		this.lineE = null;
+		this.linesE = new Array(this.sim.levels);
+		this.lineETab = new Float32Array(2 * 3);
+		this.linesETabs = new Array(this.sim.levels);
 		if(screen.width > 961){
 			this.desktop = 1;
+		}
+		
+		for(let i=0;i<this.sim.levels; i++){
+			this.linesETabs[i] = new Float32Array(6);
 		}
 		
 		for(let i=0;i<this.numberOfDisplayedStates; i++){
@@ -261,7 +279,8 @@ class RenderIt{
 		geometry.addAttribute('position', new THREE.BufferAttribute(this.positions, 3));
 		geometry.setDrawRange(0, this.N);
 		var material = new THREE.LineBasicMaterial({ color: 0xff000, linewidth: 2 });
-
+		let materialE = new THREE.LineBasicMaterial({ color: 0xff0f, linewidth: 2 });
+	
 		this.line = new THREE.Line( geometry, material );
 
 		var geometry2 = new THREE.BufferGeometry();
@@ -271,7 +290,7 @@ class RenderIt{
 		this.lineRe = new THREE.Line( geometry2, material2 );
 
 		var geometry3 = new THREE.BufferGeometry();
-		var material3 = new THREE.LineBasicMaterial({ color: 0x00fff0, linewidth: 2 });
+		var material3 = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
 		geometry3.addAttribute('position', new THREE.BufferAttribute(this.positionsWell, 3));
 		geometry3.setDrawRange(0, this.N);
 		this.lineWell = new THREE.Line( geometry3, material3 );
@@ -298,10 +317,21 @@ class RenderIt{
 		this.gridHelper2.position.z = -20;
 		this.scene.add( this.gridHelper2 );
 		this.scene.add( this.gridHelper );
+		
+		for(let i=0;i<this.sim.levels; i++){
+			let materialE = new THREE.LineBasicMaterial({ color: 0xff0f, linewidth: 2 });
+			this.linesETabs[i] = new Float32Array(6);
+			let geometriesE = new THREE.BufferGeometry();
+			geometriesE.addAttribute('position', new THREE.BufferAttribute(this.linesETabs[i], 3));
+			this.linesE[i] = new THREE.Line( geometriesE, materialE );
+			this.scene.add(this.linesE[i]);
+		}
+		
+		let geometryE = new THREE.BufferGeometry();
+		geometryE.addAttribute('position', new THREE.BufferAttribute(this.lineETab, 3));
+		this.lineE = new THREE.Line( geometryE, materialE );
 
 		
-		//this.addEnergyCircles();
-
 		this.scene.add(this.line);
 		this.scene.add(this.lineRe);
 		this.scene.add(this.lineIm);
@@ -321,27 +351,21 @@ class RenderIt{
 	
 	checkIntersections(){
 		this.raycaster.setFromCamera(this.mouse, this.camera);
-				
-		var intersects = this.raycaster.intersectObjects(this.circleC, true);
-		if (intersects.length > 0) {
-			
-			$('html,body').css('cursor', 'pointer');
 
+		var intersects = this.raycaster.intersectObjects(this.linesE, true);
+		if (intersects.length > 0) {
+			let index = this.linesE.indexOf(intersects[ 0 ].object);
+			$('html,body').css('cursor', 'pointer');
+			this.currentHover2 = index;
 			if(this.mouseDown == 1 && this.alreadyChecked == 0){
 				this.alreadyChecked = 1;
 				
-				let index = this.circleC.indexOf(intersects[ 0 ].object);
-				if(this.sim.enabled[index] == 0){
-					this.circleC[index].material.color.setHex( 0xff00ff );
-					this.sim.enabled[index] = 1;
-					psiArr[index].checked = true;
-				}else{
-					this.circleC[index].material.color.setHex( 0x3b383d );
-					this.sim.enabled[index] = 0;
-					psiArr[index].checked = false;
-				}
+				
+				this.sim.enabled[index] = this.sim.enabled[index] == 1 ? 0 : 1;
+				psiArr[index].checked = this.sim.enabled[index] == 1 ? 1 : 0;
 			}
 		} else {
+			this.currentHover2 = -1;
 			$('html,body').css('cursor', 'default');
 		
 			
@@ -395,26 +419,123 @@ class RenderIt{
 	
 	
 	updatePositions(){
-				
+		
+		
+		this
+		
 		this.sim.update();
-		
-		
-		for(let i=0;i<3 *( this.N+1); i+=3){
-			this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3];
-			this.positions[ i+2 ] = 0;
+		if(this.doRescale == 1){
+			this.rescale();
+			this.doRescale = 0;
+		}
+		if(this.currentHover <0 && this.currentHover2 < 0){
+			for(let i=0;i<3 *( this.N+1); i+=3){
+				this.positions[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positions[ i+1 ] = this.scaleWave*this.sim.re[i/3];
+				this.positions[ i+2 ] = 0;
 
-			this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsRe[ i+1 ] = -this.height/2 + this.move+ this.scaleProb*this.sim.p[i/3];
-			this.positionsRe[ i+2 ] = 0;
+				this.positionsRe[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positionsRe[ i+1 ] = this.offset-this.height/2 + this.move+ this.scaleProb*this.sim.p[i/3];
+				this.positionsRe[ i+2 ] = 0;
 			
-			this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
-			this.positionsIm[ i+1 ] =  this.scaleWave*this.sim.im[i/3];
-			this.positionsIm[ i+2 ] = 0;
+				this.positionsIm[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positionsIm[ i+1 ] =  this.scaleWave*this.sim.im[i/3];
+				this.positionsIm[ i+2 ] = 0;
+				
+				
+
+			}
+			
+			for(let i=0;i<this.sim.levels; i++){
+				if(this.sim.enabled[i]){
+					this.linesE[i].material.color = new THREE.Color( 0xff0000 );    
+				}else{
+					this.linesE[i].material.color = new THREE.Color( 0xaf0f );    
+				
+				}
+				this.linesE[i].material.needsUpdate = true;
+				let ene = this.sim.calculateStationaryEnergy(i);
+				if(this.drawEnergies == 0){
+					ene = -100000;
+				}
+				this.linesETabs[i][0] = -this.width/2;
+				this.linesETabs[i][1] =-this.height/2 + ene;
+				this.linesETabs[i][2] = 0;
+				
+				this.linesETabs[i][3] = +this.width/2;
+				this.linesETabs[i][4] =-this.height/2 + ene;
+				this.linesETabs[i][5] = 0;
+			
+			}
+			
+		}else{
+			
+			
+			let hover = this.currentHover > -1 ? this.currentHover : this.currentHover2;
+			for(let i=0;i<3 *( this.N+1); i+=3){
+
+				let vec = this.rescaleTmp(hover);
+				this.positions[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positions[ i+1 ] = vec.y*this.sim.reArray[hover][i/3];
+				this.positions[ i+2 ] = 0;
+
+				this.positionsRe[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positionsRe[ i+1 ] = this.offset-this.height/2 + this.move+ vec.x*this.sim.pArray[hover][i/3];
+				this.positionsRe[ i+2 ] = 0;
+			
+				this.positionsIm[ i ] = 0.9*(-this.width/2+i/(this.ratio*3))
+				this.positionsIm[ i+1 ] =  vec.y*this.sim.imArray[hover][i/3];
+				this.positionsIm[ i+2 ] = 0;
+
+
+			}
+			this.linesE[hover].material.color = new THREE.Color( 0xf4c542 );         
+			this.linesE[hover].material.needsUpdate = true;
+			this.linesETabs[hover][1] =-this.height/2 + this.sim.calculateStationaryEnergy(hover);
+			this.linesETabs[hover][4] =-this.height/2 + this.sim.calculateStationaryEnergy(hover);
 
 
 		}
+
+		this.positionsWell[0] = 0.9*(-this.width/2);
+		this.positionsWell[1] = this.height / 2 + 10; 
+		this.positionsWell[2] = 0;
+		
+		this.positionsWell[3] = 0.9*(-this.width/2);
+		this.positionsWell[4] = - this.height / 2 - 10; 
+		this.positionsWell[5] = 0;
+		
+		this.positionsWell[6] = 0.9*(this.width/2);
+		this.positionsWell[7] = -this.height / 2 - 10; 
+		this.positionsWell[8] = 0;
+		
+		this.positionsWell[9] = 0.9*(this.width/2);
+		this.positionsWell[10] =  this.height / 2 + 10; 
+		this.positionsWell[11] = 0;
+		
 				
+	}
+
+	rescaleTmp(index){
+		let maxP = Math.max.apply(Math,this.sim.pArray[index]);
+		let maxR = Math.max.apply(Math,this.sim.reArray[index]);
+		let maxI = Math.max.apply(Math,this.sim.imArray[index]);
+		
+		let maxHeight = this.height-this.move;
+		
+		let scaleWave1 = Math.abs(0.4 * maxHeight / maxR);
+		let scaleWave2 =  Math.abs(0.4 * maxHeight / maxI);
+		
+		let scaleProb =  Math.abs(0.5 * maxHeight / maxP);
+		var vec = new THREE.Vector2();
+		vec.x = scaleProb;
+		if(scaleWave1 < scaleWave2)
+			vec.y = scaleWave1;
+		else
+			vec.y = scaleWave2;
+		
+		return vec;
+		
 	}
 	
 	rescale(){
@@ -468,10 +589,10 @@ newNode.innerHTML += "<table class='psi_levels'><tr><th>Poziom</th><th>Faza</th>
 for(let i=0; i < abc.sim.levels; i++){
 
 	let txt = (i + 1);
-	if((i + 1)<10){
+	if((i + 1)<15){
 		txt = ' ' + (i + 1);
 	}
-	newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
+	newNode.innerHTML += '<tr><td><label class="control control-checkbox"><input type="checkbox" id="n' + (i + 1) + '" checked="checked" /><div id="nhover' + (i + 1) + '" class="control_indicator"></div></label>' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
 	
 	
 }
@@ -492,9 +613,9 @@ for(let i=0; i < abc.sim.levels; i++){
 		psiArr[i].checked = true;
 	
 	psiArr[i].addEventListener( "change", 
-	function(ii){
+	function(){
 		abc.sim.time = 0;
-		abc.rescale();
+		abc.doRescale = 1;
 		if (this.checked) {
 			abc.sim.enabled[i] = 1;
 			//abc.circleC[i].material.color.setHex( 0xff00ff );
@@ -504,6 +625,16 @@ for(let i=0; i < abc.sim.levels; i++){
 			//abc.circleC[i].material.color.setHex( 0x3b383d );
 		}
 		
+	});
+
+	$("#nhover" + (i+1)).on("mouseover",function(){
+		
+		abc.currentHover = i;
+	});
+
+	$("#nhover" + (i+1)).on("mouseout",function(){
+	
+		abc.currentHover = -1;
 	});
 	
 	psiPhase[i].addEventListener("input", function(e) {
@@ -527,6 +658,8 @@ var triangle = document.getElementById("triangle");
 var clearer = document.getElementById("clearer");
 var rescale = document.getElementById("rescale");
 var chRe = document.getElementById("chRe");
+var chMod = document.getElementById("chMod");
+var energies = document.getElementById("energies");
 //var chDe = document.getElementById("chDe");
 var chGrid = document.getElementById("chGrid");
 var sldierTime = document.getElementById("slider_time");
@@ -581,11 +714,11 @@ clearer.addEventListener( "click",
 			if(ii == 0){
 				psiArr[ii].checked = true;
 				abc.sim.enabled[ii] = 1;
-				abc.circleC[ii].material.color.setHex( 0xff00ff );
+				//abc.circleC[ii].material.color.setHex( 0xff00ff );
 			}else{
 				psiArr[ii].checked = false;
 				abc.sim.enabled[ii] = 0;
-				abc.circleC[ii].material.color.setHex( 0x3b383d );
+				//abc.circleC[ii].material.color.setHex( 0x3b383d );
 			}
 		}
 		abc.sim.time = 0;
@@ -615,22 +748,20 @@ function setAmp(index, value){
 	psiAmp[index].value = value;
 	
 }
-/*
-chDe.addEventListener( "change", 
+
+chMod.addEventListener( "change", 
 function(){
 	if (this.checked) {
-		abc.drawing[0] = 1;
-		abc.drawing[1] = 0;
-		chRe.checked = false;
+	
+		abc.drawing[1] = 1;
+		
 		abc.gridDraw = [1,0];
 	}else{
-		abc.drawing[0] = 0;
-		abc.drawing[1] = 1;
-		chRe.checked = true;
+		abc.drawing[1] = 0;
 		abc.gridDraw = [0,1];
 	}
 });
-*/
+
 chGrid.addEventListener( "change", 
 function(){
 	if (this.checked) {
@@ -639,27 +770,39 @@ function(){
 		abc.gridEnabled = 0;
 	}
 });
+energies.checked = true;
+energies.addEventListener( "change", 
+function(){
+	if (this.checked) {
+		abc.drawEnergies = 1;
+	}else{
+		abc.drawEnergies = 0;
+	}
+});
+
 
 chRe.addEventListener( "change", 
 function(){
 	if (this.checked) {
-		abc.drawing[1] = 1;
-		abc.drawing[0] = 0;
+		abc.drawing[0] = 1;
 		//chDe.checked = false;
 				abc.gridDraw = [0,1];
 	}else{
-		abc.drawing[1] = 0;
-		abc.drawing[0] = 1;
+		abc.drawing[0] = 0;
 		//chDe.checked = true;
 		abc.gridDraw = [1,0];
 	}
 });
 
 //chDe.checked = true;
-chRe.checked = false;
+running.checked = true;
+chRe.checked = true;
+chMod.checked = false;
 abc.renderer.domElement.addEventListener('mousedown', function(event){
 	event.preventDefault();
+
 	abc.mouseDown = 1;
+	
 }, false);
 abc.renderer.domElement.addEventListener('mouseup', function(event){
 	event.preventDefault();
@@ -727,6 +870,11 @@ this.animate = function() {
 			abc.lineRe.geometry.attributes.position.needsUpdate = true;
 			abc.lineIm.geometry.attributes.position.needsUpdate = true;
 			abc.lineWell.geometry.attributes.position.needsUpdate = true;
+			abc.lineE.geometry.attributes.position.needsUpdate = true;
+			for(let i=0;i<abc.sim.levels; i++){
+				abc.linesE[i].geometry.attributes.position.needsUpdate = true;
+				
+			}
 			abc.checkIntersections();
 			if(abc.drawing[0] == 1){
 				abc.lineRe.visible = true;

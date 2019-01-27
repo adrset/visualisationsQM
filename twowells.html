@@ -65,21 +65,24 @@
                <div id="sim_mode_draw">
                 	<div id="mainCheckboxes">	
 <table class="checkboxTable"><tr>			
-					 <td class="oneof3"><div class="center">|&Psi;|<sup>2</sup> |  Fala  <input type="checkbox" id="chRe" style="display:none"/>
-					  <label for="chRe" class="toggle"><span></span></label></div></td>
-				 <td class="oneof3"><div class="center">Ewolucja<input type="checkbox" id="running" style="display:none"/>
+					 <td class="oneof4"><div class="center">Rysuj &Psi;<input type="checkbox" id="chMod" style="display:none"/>
+					  <label for="chMod" class="toggle"><span></span></label></div></td>
+				 <td class="oneof4"><div class="center">Ewolucja<input type="checkbox" id="running" style="display:none"/>
 					  <label for="running" class="toggle"><span></span></label>  </div></td>
 
-					 <td class="oneof3"><div class="center">Siatka<input type="checkbox" id="chGrid" style="display:none"/>
+					 <td class="oneof4"><div class="center">Siatka<input type="checkbox" id="chGrid" style="display:none"/>
 					  <label for="chGrid" class="toggle"><span></span></label></div></td>		
-					  
-</table></tr>
+					   <td class="oneof4"><div class="center">Energie<input type="checkbox" id="energies" style="display:none"/>
+					  <label for="energies" class="toggle"><span></span></label></div></td>	
+</tr><tr >
+ <td  class="oneof4"><div style="margin-top:6px;" class="center">Rysuj |&Psi;|<sup>2</sup> <input type="checkbox" id="chRe" style="display:none"/>
+					  <label for="chRe" class="toggle"><span></span></label></div></td>	</tr></table>
                 </div>
 				<div id="mainSliders">
-				  <span class="sim_mode_expand_label">Szybkość</span><input type="range" min="0" max="0.005" value="0.001" step="0.00001" id="slider_time" class="sim_slider" />
+				  <span class="sim_mode_expand_label">Szybkość</span><input type="range" min="0" max="0.01" value="0.0001" step="0.0000001" id="slider_time" class="sim_slider" />
 				   <span class="sim_mode_expand_label">Szerokość studni</span><input type="range" min="10" max="120" value="15" step="0.1" id="slider_a" class="sim_slider" />
 				   <span class="sim_mode_expand_label">Głębokość studni</span><input type="range" min="0.0001" max="0.03" value="0.02" step="0.0001" id="slider_U" class="sim_slider" />
-				   <span class="sim_mode_expand_label">n</span><input type="range" min="0" max="20" value="0" step="1" id="slider_n" class="sim_slider" />
+				   
 					<span class="sim_mode_expand_label" id="availableEnergies">Liczba dostępnych stanów: </span>
 					</div>
 			<div id="mainButtons">

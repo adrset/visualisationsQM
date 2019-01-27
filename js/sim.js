@@ -1,5 +1,30 @@
-	$(document).ready(function(){
-		setTimeout(function(){
+
+		
+		class TwoSideArrow{
+			constructor( position, angle){
+				
+				let spriteMap = new THREE.TextureLoader().load( 'arrow.png' );
+
+				let spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+
+				this.sprite = new THREE.Sprite( spriteMaterial );
+				this.sprite.scale.set(25, 20, 1)
+				this.sprite.position.set(position.x, position.y, - 19);
+				
+				if(angle !== undefined){
+					this.sprite.material.rotation = toRad(angle);
+				}
+				
+			}
+			
+			
+		}	
+			var newNode = document.createElement('div');
+			newNode.innerHTML = "Just a test";
+			newNode.style.position = 'absolute';
+			document.getElementById("canvas").appendChild(newNode);
+			var KEn = 0;
+			var clicked = 0;
 			var sliderSigma = document.getElementById("slider_sigma");
 			var sliderDt = document.getElementById("slider_dt");
 			var sliderUpf = document.getElementById("slider_upf");
@@ -22,7 +47,7 @@
 		    var mouseDr = {};
 
 		    var mouseDown = 0;
-		    let N = 3600;
+		    let N = 2000;
 		    let h = 1.054e-34;
 		    let mass = 9.1e-31;
 		    let deltax = .1e-9;
@@ -32,7 +57,7 @@
 		    var mouseOld = new THREE.Vector2();
 	        var ratio = N / width;  
 		    let dx = deltax * 1e9;
-		    let sigma = 40;
+		    let sigma = 50;
 		    let nc = 400;
 		    var pTotal = 0;
 		    let PI = 3.14159;
@@ -42,11 +67,11 @@
 		    var wasClicked = 0;
 			chIm.checked = false;
 			chRe.checked = false;
-			
+			var needsUpdate = 0;
 		    var PML_width = 50;
 		    let height = document.getElementById("canvas_holder").clientHeight;
 		    var x1 = 790/ratio;
-		    var x2 = 800/ratio;
+		    var x2 = 900/ratio;
 		    var multiplier = 10000;
 			var ev =  1.6e-19;
 			var oneoverev = 1/ ev;
@@ -68,7 +93,9 @@
 		    setup();
 
 
-		   
+		    var arrow1 = new TwoSideArrow(new THREE.Vector2());
+			var arrow2 = new TwoSideArrow(new THREE.Vector2(), 90);
+			var arrow3 = new TwoSideArrow(new THREE.Vector2(), 90);
 		    window.addEventListener('resize', onWindowResize, false);
 		    var scene = new THREE.Scene();
 
@@ -88,7 +115,7 @@
 			clicker.click(function(){
 				var theGuy = $("#sim_mode_expand");
 				
-				console.log(theGuy);
+				
 				if( theGuy.hasClass("hidden_mobile")){
 					theGuy.removeClass("hidden_mobile");
 					var value = theGuy.height();
@@ -110,19 +137,13 @@
 			});
 			
 				
-		    var stats = new Stats();
-		    stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-                    
-		    stats.dom.style.position = 'absolute';
-			stats.dom.style.zIndex = '2';
-		    stats.dom.style.top = 0 + 'px';
-		    //stats.dom.classList.add("movable");
+
 			renderer.domElement.style.position = 'absolute';
 			renderer.domElement.style.top = 0 + 'px';
 		    theDiv.appendChild(renderer.domElement);
-		    theDiv.appendChild( stats.dom );
+		  
 		    raycaster = new THREE.Raycaster();
-		    raycaster.linePrecision = 20;
+		    raycaster.linePrecision = 5;
 			chDeSq.checked = false;
 		    renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 			var once = 1;
@@ -150,16 +171,56 @@
 		    var materialV = new THREE.LineBasicMaterial({ color: 0xff0505, linewidth: 2 });
 			var materialR = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
 		    var materialI = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 2 });
+		    var materialE = new THREE.LineBasicMaterial({ color: 0x0f208f, linewidth: 2 });
   
 		    // line
 		    var lineV = new THREE.Line(geometryV, materialV);
 		    var lineD = new THREE.Line(geometryD, materialD);
 			var lineR = new THREE.Line(geometryR, materialR);
 		    var lineI = new THREE.Line(geometryI, materialI);
-		    scene.add(lineV);
+			let geometryU1 = new THREE.BufferGeometry();
+			var lineWellU1Tab = new Float32Array(2 * 3);
+			var lineWellLTab = new Float32Array(2 * 3);
+			var lineWellRTab = new Float32Array(2 * 3);
+			var lineWellD1Tab = new Float32Array(2 * 3);
+			var lineWellD2Tab = new Float32Array(2 * 3);
+			var lineETab = new Float32Array(2 * 3);
+			geometryU1.addAttribute('position', new THREE.BufferAttribute(lineWellU1Tab, 3));
+			var lineWellU1 = new THREE.Line( geometryU1, materialV );
+			
+			let geometryL = new THREE.BufferGeometry();
+			geometryL.addAttribute('position', new THREE.BufferAttribute(lineWellLTab, 3));
+			var lineWellL = new THREE.Line( geometryL, materialV );
+			
+			let geometryRr = new THREE.BufferGeometry();
+			geometryRr.addAttribute('position', new THREE.BufferAttribute(lineWellRTab, 3));
+			var lineWellR = new THREE.Line( geometryRr, materialV );
+			
+			let geometryD1 = new THREE.BufferGeometry();
+			geometryD1.addAttribute('position', new THREE.BufferAttribute(lineWellD1Tab, 3));
+			var lineWellD1 = new THREE.Line( geometryD1, materialV );
+
+			let geometryD2 = new THREE.BufferGeometry();
+			geometryD2.addAttribute('position', new THREE.BufferAttribute(lineWellD2Tab, 3));
+			var lineWellD2 = new THREE.Line( geometryD2, materialV );	
+
+			let geometryE = new THREE.BufferGeometry();
+			geometryE.addAttribute('position', new THREE.BufferAttribute(lineETab, 3));
+			var lineE = new THREE.Line( geometryE, materialE );					
+		
+		  //  scene.add(lineV);
 		    scene.add(lineD);
 			scene.add(lineR);
 		    scene.add(lineI);		
+		    scene.add(lineE);		
+		    scene.add(lineWellL);		
+		    scene.add(lineWellR);		
+		    scene.add(lineWellU1);		
+		    scene.add(lineWellD1);		
+		    scene.add(lineWellD2);		
+		    scene.add(arrow1.sprite);		
+		    scene.add(arrow2.sprite);		
+		    scene.add(arrow3.sprite);		
 		    var whichClicked = 0;
 
 		    addListeners();
@@ -169,7 +230,6 @@
 		        var t0 = performance.now();
 		        //console.log(stopper);
 		       
-				stats.begin();
 				if (stopper != 1) {
 					for (var i = 0; i < updatesPerFrame - 1; i++) {
 						time += dt;
@@ -211,11 +271,18 @@
 				lineD.geometry.attributes.position.needsUpdate = true;
 				lineR.geometry.attributes.position.needsUpdate = true;
 				lineI.geometry.attributes.position.needsUpdate = true;
+
+				lineWellL.geometry.attributes.position.needsUpdate = true;
+				lineWellR.geometry.attributes.position.needsUpdate = true;
+				lineWellU1.geometry.attributes.position.needsUpdate = true;
+				lineWellD1.geometry.attributes.position.needsUpdate = true;
+				lineWellD2.geometry.attributes.position.needsUpdate = true;
+				lineE.geometry.attributes.position.needsUpdate = true;
 				renderer.render(scene, camera);
 				render();
 				var t1 = performance.now();
 				//console.log(1/((t1-t0)));
-				stats.end();
+				
 			
 
 		    };
@@ -235,33 +302,111 @@
 
 		        raycaster.setFromCamera(mouse, camera);
 				
-		        var intersects = raycaster.intersectObjects([lineV], true);
-		        if (intersects.length > 0) {
-		            $('html,body').css('cursor', 'pointer');
-					changePotential(1);
-		           
-		        } else {
-		            $('html,body').css('cursor', 'default');
-					changePotential(0);
-					
-					
-					var intersects = raycaster.intersectObjects([lineD], true);
-					if (intersects.length > 0 || wasClicked == 1) {
-						$('html,body').css('cursor', 'pointer');
-						if(mouseDown == 1 ){
-							
-							nc = (mouse.x + 1)/2 * width * ratio;
-							wasClicked = 1;
-							setup();
-						}else{
-							wasClicked = 0;
-							
-						}
-						//setup();
-					   
-					} 
-		            
-		        }
+		       // var intersects = raycaster.intersectObjects([lineV], true);
+		        var intersects = raycaster.intersectObjects([lineWellU1], true);
+				 if ((intersects.length > 0 || clicked == 1) && clicked < 2) {
+					 
+					 $('html,body').css('cursor', 'pointer');
+					 
+					 if(mouseDown == 1){
+	
+						  clicked = 1;
+						 y = (mouse.y * height * 4 / (multiplier) )/2 ;
+						 setup();
+						 needsUpdate = 1;
+						
+					 }else {
+						 
+						 clicked = 0;
+					 }
+				 }
+
+
+				intersects = raycaster.intersectObjects([lineWellL], true);
+				 if ((intersects.length > 0 || clicked == 2) && clicked < 3) {
+					 
+					 $('html,body').css('cursor', 'pointer');
+					 
+					 if(mouseDown == 1){
+	
+						 clicked = 2;
+						 let xx1 =  ((mouse.x + 1 ) / 2* width);
+						 if(xx1 < x2)
+							x1 = xx1 ;
+						 setup();
+						 needsUpdate = 1;
+						 
+					 }else {
+						 
+						 clicked = 0;
+					 }
+				 }
+				 
+				 intersects = raycaster.intersectObjects([lineWellR], true);
+				 if ((intersects.length > 0 || clicked == 3)  && clicked < 4) {
+					 
+					 $('html,body').css('cursor', 'pointer');
+					 
+					 if(mouseDown == 1){
+	
+						 clicked = 3;
+						 let xx2 =  ((mouse.x + 1 ) / 2* width);
+						 
+						 if(xx2 > x1)
+							x2 = xx2;
+						 setup();
+						 needsUpdate = 1;
+						
+					 }else {
+						 
+						 clicked = 0;
+					 }
+				 }
+				 
+				 intersects = raycaster.intersectObjects([lineD], true);
+				if (((intersects.length > 0 || clicked == 4)) && clicked != 1 && clicked != 2 && clicked != 3) {
+					$('html,body').css('cursor', 'pointer');
+					if(mouseDown == 1 ){
+						needsUpdate = 1;
+						nc = (mouse.x + 1)/2 * width * ratio;
+						clicked = 4;
+						setup();
+					}else{
+						clicked = 0;
+						
+					}
+				}
+				
+				 intersects = raycaster.intersectObjects([lineE], true);
+				if (((intersects.length > 0 || clicked == 4)) && clicked != 1 && clicked != 2 && clicked != 3 && clicked != 4) {
+					$('html,body').css('cursor', 'pointer');
+					if(mouseDown == 1 ){
+						needsUpdate = 1;
+						clicked = 5;
+						 console.log((mouse.y * height )) ;
+						setup();
+					}else{
+						clicked = 0;
+						
+					}
+				}
+				 
+				 if(needsUpdate == 1 & clicked == 0){
+						lineWellU1.geometry.boundingSphere = null;
+						lineWellU1.geometry.boundingBox = null;
+						lineWellL.geometry.boundingSphere = null;
+						lineWellL.geometry.boundingBox = null;
+						lineWellR.geometry.boundingSphere = null;
+						lineWellR.geometry.boundingBox = null;
+						lineWellD1.geometry.boundingBox = null;
+						lineWellD2.geometry.boundingBox = null;
+					 
+				 }
+				 
+				 
+
+
+
 				
 			
 
@@ -301,7 +446,7 @@
 						vColor = 0xffaa25;
 						if((mouseMoved.x * width > x1 + 5 && mouseMoved.x * width < x2 -5 && whichClicked == 0) || whichClicked == 1){
 							
-							y = mouse.y *0.35/2.4;
+							//y = mouse.y *0.35/4.8;
 							whichClicked = 1;
 							$('html,body').css('cursor', 'n-resize');
 							setup();
@@ -330,7 +475,7 @@
 					 	Color = 0xffaa25;
 						if( whichClicked == 1){
 						
-						y = mouse.y *0.35;
+						y = mouse.y *0.18;
 						whichClicked = 1;
 						$('html,body').css('cursor', 'n-resize');
 						setup();
@@ -374,7 +519,80 @@
 				chart.update();
 			}
 
+			function updateWell(){
+				let yy = y;
+				if(  currentPreset == 2){
+					yy = -y;
+				}
+				//console.log(KEn);
+				lineETab[0] = -	width/2 ;
+				lineETab[1] = multiplier/4 * oneoverev * KEn * ev;
+				lineETab[2] = 0;
+				
+				lineETab[3] = +	width/2; 
+				lineETab[4] = multiplier/4 * oneoverev * KEn * ev;
+				lineETab[5] = 0;
+				
+				let prop =  parseInt( height/2 + 35 - multiplier/4 * oneoverev * KEn * ev);
+				
+				newNode.style.top = prop  +  'px';
+				newNode.style.left = (width * 0.84)  +  'px';
+				newNode.innerHTML = "<b>&lt;E&gt;<sub>Gauss</sub> = " + parseFloat(KEn).toFixed(3) + " eV</b>";
+				lineWellD1Tab[0] = -	width/2 ;
+				lineWellD1Tab[1] = 0;
+				lineWellD1Tab[2] = 0;
+				
+				lineWellD1Tab[3] = -	width/2 + x1
+				lineWellD1Tab[4] = 0;
+				lineWellD1Tab[5] = 0;
+				
+				lineWellLTab[0] = -	width/2 + x1;
+				lineWellLTab[1] = 0;
+				lineWellLTab[2] = 0;
+				
+				lineWellLTab[3] = -	width/2 + x1
+				lineWellLTab[4] = multiplier/4 * oneoverev * yy * ev;
+				lineWellLTab[5] = 0;
+				
+				lineWellRTab[0] = -	width/2 + x2;
+				lineWellRTab[1] = 0;
+				lineWellRTab[2] = 0;
+				
+				lineWellRTab[3] = -	width/2 +x2;
+				lineWellRTab[4] = multiplier/4 * oneoverev * yy * ev;
+				lineWellRTab[5] = 0;
+				
+				lineWellU1Tab[0] = -	width/2 +x1;
+				lineWellU1Tab[1] = multiplier/4 * oneoverev * yy * ev;
+				lineWellU1Tab[2] = 0;
+				
+				lineWellU1Tab[3] = -width/2 +x2;
+				lineWellU1Tab[4] = multiplier/4 * oneoverev * yy * ev;
+				lineWellU1Tab[5] = 0;
+				
+				lineWellD2Tab[0] = -width/2 +x2;
+				lineWellD2Tab[1] = 0;
+				lineWellD2Tab[2] = 0;
+				
+				lineWellD2Tab[3] = + width/2;
+				lineWellD2Tab[4] = 0;
+				lineWellD2Tab[5] = 0;
+				updateArrows();
+			}
 			
+			function updateArrows(){
+				let yy = y;
+				if(  currentPreset == 2){
+					yy = -y;
+				}
+				arrow1.sprite.position.x = ( - width/2 + x1 + (x2-	 x1)/2);
+				arrow1.sprite.position.y = multiplier/4 * oneoverev * yy * ev;
+				arrow2.sprite.position.x = ( - width/2 +x2);
+				arrow2.sprite.position.y = multiplier/8 * oneoverev * yy * ev;
+				arrow3.sprite.position.x = ( - width/2 +x1);
+				arrow3.sprite.position.y = multiplier/8 * oneoverev * yy * ev;
+				 
+			}
 
 		    function updatePositions() {
 				
@@ -443,6 +661,7 @@
 		            positionsI[index4++] = 0;
 
 		        }
+				updateWell();
 
 
 		    }
@@ -488,7 +707,7 @@
 					imag[i] += ra * (delta_r) - (dt / h) * V[i] * real[i];		         
 		        }
 				
-				 for (let i = N-(PML_width+1); i < N-(PML_width+1); i++) {
+				 for (let i = N-(PML_width+1); i < N-1; i++) {
 					
 					let delta_i = imag[i + 1] - 2 * imag[i] + imag[i - 1];
 					let delta_r = real[i + 1] - 2 * real[i] + real[i - 1];
@@ -534,26 +753,13 @@
 
 		    }
 			
-			function calculateEnergy(){
-				let comp = math.complex(1,3);
-				//console.log(comp);
-				psi = new Array(N);
-				
-				let ke = math.complex(0,0);
-				for (let i = 0; i < N ; i++) {
-					psi[i] = math.complex(real[i], imag[i]);
+			function getEnergyX(){
+				let ke = 0;
+				for (var i = 0; i < N ; i++) {
+					ke += -2*((i-nc)/ratio)/(2*sigma^2)*Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (Math.sqrt(2)*sigma/ratio )), 2));
 				}
-				
-				for (let i = 1; i < N-1 ; i++) {
-		            let lap_p = math.add(math.add(psi[i+1],  math.multiply(psi[i], -2)),  psi[i-1]); 
-					//console.log(lap_p);
-		            //ke = math.add(ke, math.multiply(lap_p,math.conj(psi)));
-		        }
-				
-				//let K_E = -oneoverev*(Math.pow(h/deltax,2) / (2*mass));
-				//console.log(ke);
+				return -oneoverev*(((h)*(h))/(2*mass)) * ke;
 			}
-
 
 		    function setup() {
 		        resetPotential();
@@ -561,19 +767,21 @@
 		        time = 0;
 				pTotal = 0;
 		        for (var i = 0; i < N ; i++) {
-		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.cos(2*Math.PI/ lambda * ((i - nc)/ratio));
-		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (sigma/ratio )), 2)) * Math.sin(2*Math.PI/ lambda * ((i - nc)/ratio));
+		            real[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (Math.sqrt(2)*sigma/ratio )), 2)) * Math.cos(2*Math.PI/ lambda * ((i - nc)/ratio));
+		            imag[i] = Math.exp(-1.0 * Math.pow((((i - nc)/ratio) / (Math.sqrt(2)*sigma/ratio )), 2)) * Math.sin(2*Math.PI/ lambda * ((i - nc)/ratio));
 		            pos[i] = dx * i;
 		            pTotal = pTotal + Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
 				
-				calculateEnergy();
+			
 
 		        // set values on the end to 0
 		        //imag[0] = 0; // set 0 at boundaries
 		        //real[0] = 0; // set 0 at boundaries
 		       // real[N - 1] = 0;
 		       // imag[N - 1] = 0;
+			   
+			    
 
 		        var norm = Math.sqrt(pTotal);
 		        pTotal = 0.0;
@@ -583,10 +791,9 @@
 		            imag[i] /= norm;
 		            pTotal += Math.pow(imag[i], 2) + Math.pow(real[i], 2);
 		        }
-				if(1){
-						
-						console.log(Math.max(...real));
-					}
+				
+				KEn = getEnergy();
+					//console.log(KEn);
 		    }
 
 		    function resetPotential() {
@@ -602,7 +809,7 @@
 					}
 				}else if(currentPreset == 1){
 			
-					for (var i = parseInt(x2*ratio); i < N; i++) {
+					for (var i = parseInt(x1*ratio); i < N; i++) {
 						V[i] = y * ev;
 					}
 					
@@ -641,6 +848,49 @@
 					
 
 		    }
+			function getVariance(){
+				let meanX = getMeanX();
+				return getMeanSquaredX() - meanX*meanX;
+			}
+			
+			function getMeanX(){
+				
+				let meanX = 0;
+				
+				for(let i = 0;i < N; i++){
+					meanX += (real[i] * real[i] + imag[i] * imag[i])*i*deltax;
+				}
+				
+				return meanX*deltax;
+				
+				
+			}
+			
+			function getMeanSquaredX(){
+				let meanSquaredX = 0;
+				
+				for(let i = 0;i < N; i++){
+					meanSquaredX += (real[i] * real[i] + imag[i] * imag[i])*(i*deltax)*(i*deltax);
+				}
+				
+				return meanSquaredX*deltax;
+				
+			}
+			
+			function getEnergy(){
+				let ke = 0;
+				for(let i =1 ; i < N-1; i++){
+					ke += real[i]*(real[i+1] - 2* real[i] + real[i-1]) + imag[i] * (imag[i+1] - 2* imag[i] + imag[i-1]);
+					
+				}
+				
+				ke = -oneoverev*(((h/deltax)*(h/deltax))/(2*mass)) * ke;
+				
+				
+				return ke;
+				
+				
+			}
 
 		    function addListeners() {
 
@@ -648,7 +898,7 @@
 		            var target = (e.target) ? e.target : e.srcElement;
 		            lambda = 1/(target.value);
 					
-		            console.log(target.value);
+		           
 		            setup();
 		        });
 				
@@ -705,8 +955,8 @@
 				   }else if(val == "step"){
 					   currentPreset = 1;
 					   nc = 300;
-					   x1 = 0;
-					   x2 = 800/ratio;
+					   x1 = 800/ratio;
+					   x2 = 3900/ratio;
 					   setup();
 				   }else if(val == "well"){
 						setX1(730/ratio);
@@ -725,7 +975,9 @@
 					    currentPreset = 3;
 					    setup();
 				   }else if(val == "free"){
-
+						setX1(-20);
+						setY(0);
+						setX2(width * ratio + 10);
 					    currentPreset = 4;
 					    setup();
 				   }else{
@@ -845,7 +1097,9 @@
 		
 			
 
-	}, 200);
+	
+			function toRad(alfa){
+				return alfa * Math.PI / 180;
+			}
 
-});
 		

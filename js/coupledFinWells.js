@@ -30,7 +30,9 @@ class TwoSideArrow{
 	
 	
 }
-
+var psiArr = null;
+var psiPhase = null;
+var psiAmp = null;
 class Simulation {
   constructor(N) {
 		this.oddSolutionsNumber = 0;
@@ -39,7 +41,8 @@ class Simulation {
 		this.dt = 0.0001;
 		this.n = 1;
 		this.m = 1;
-		this.U = 0.01;
+		this.energies = new Array(100);
+		this.U = 0.005;
 		this.L = 1;
 		this.hbar = 1;
 		this.dx = 1;
@@ -47,7 +50,7 @@ class Simulation {
 		this.ratio = this.N / this.width;
 		this.re = [];
 		this.im = [];
-		this.levels = screen.width > 961 ? 50 : 25;
+		this.levels = screen.width > 961 ? 50 : 50;
 		this.reArray = new Array(this.levels);
 		this.imArray = new Array(this.levels);
 		this.pArray = new Array(this.levels);
@@ -56,7 +59,7 @@ class Simulation {
 		this.p = [];
 		this.x = [];
 		this.V = [];
-		this.a = 50;
+		this.a = 100;
 		this.del_x = 1e-9;
 		this.current = 0;
 		this.currentMaxLevel = 0;
@@ -79,6 +82,7 @@ class Simulation {
 		for(let ii = 0; ii < this.levels; ii++){
 			this.reArray[ii] = new Array(this.N);
 			this.imArray[ii] = new Array(this.N);
+			this.pArray[ii] = new Array(this.N);
 			this.enabled[ii] = 0;
 			this.amp[ii] = Math.sqrt(2);
 			this.phases[ii]  = 0; 
@@ -170,7 +174,8 @@ class Simulation {
 		
 		H[this.N-1][this.N-2] = -1*chi0;
 		H[this.N-1][this.N-1] = 2*chi0+this.V[this.N-1];
-		
+		//H[0][this.N-1] = -1*chi0;
+		//H[this.N-1][0] = -1*chi0
 		var AA = new Matrix(H); 
 		//console.log(H);
 		var Eig2 = AA.eig();
@@ -180,11 +185,16 @@ class Simulation {
 		
 		let l = Eig2.d;
 		for(let ii =0; ii<this.N;ii++){
+
 			l[ii] = (J2eV*l[ii]);
-			if(l[ii]*eV2J < this.U  *eV2J)
+						console.log(l[ii]*eV2J);
+			if(l[ii]*eV2J < this.U  *eV2J){
 				this.currentMaxLevel = ii;
+				this.energies[ii] = l[ii]*eV2J;
+			}
 		}
-		//console.log(l);
+		console.log(this.energies[this.currentMaxLevel]);
+		console.log(l[this.currentMaxLevel+1]*eV2J);
 		//console.log(Eig2.V);
 
 		let toAnnounce = '';
@@ -197,7 +207,7 @@ class Simulation {
 		//toAnnounce += '\n';
 		}
 		this.eigM = Eig2;
-		document.getElementById("availableEnergies").innerHTML = "Liczba dostępnych stanów: " + (this.currentMaxLevel + 1);
+		document.getElementById("availableEnergies").innerHTML = "Liczba dostępnych stanów: " + (this.currentMaxLevel);
 		/*console.log(toAnnounce);
 		toAnnounce = '';
 		for(let ii =0; ii<this.N;ii++)
@@ -215,15 +225,69 @@ class Simulation {
 	
     update(){
 		
-		
+		for(let i=0;i<this.levels; i++){
+				if(i <  this.currentMaxLevel){
+					for(let j=0;j<this.N;j++){
 
+						this.reArray[i][j] = this.amp[i]*this.eigM.V[j][i]*Math.cos(this.time * this.eigM.d[i]/ this.hbar + toRad(this.phases[i]));
+						this.imArray[i][j] = this.amp[i]*this.eigM.V[j][i]*Math.sin(this.time * this.eigM.d[i]/ this.hbar + toRad(this.phases[i]));
+						this.pArray[i][j] = this.amp[i]*this.amp[i]*(this.reArray[i][j]*this.reArray[i][j] + this.imArray[i][j]*this.imArray[i][j]);
+						
+						
+					}
+				}else{
+					for(let j=0;j<this.N;j++){
+						this.reArray[i][j] = 0;
+						this.imArray[i][j] = 0;
+						this.pArray[i][j] = 0;
+					}
+				}
+				
+			
+			
+		}
+		
+		let norm = 0;
+		for (let ii = 0; ii < this.N ; ii++){
+			this.im[ii] = 0;
+			this.re[ii] = 0;
+			for(let jj = 0; jj< this.levels && this.currentMaxLevel; jj++){
+				if(this.enabled[jj] == 1){
+
+					this.im[ii] += this.imArray[jj][ii];
+					this.re[ii] += this.reArray[jj][ii];
+				}
+			}
+			
+		}
+		
+		for (let ii = 0; ii < this.N ; ii++){
+			this.p[ii] = (this.im[ii]) * (this.im[ii]) + (this.re[ii]) * (this.re[ii]);
+			norm += this.p[ii];
+		}
+		
+		
+		for (let ii = 0; ii < this.N ; ii++){
+			this.p[ii] /= (norm);
+			
+		}
+		norm = 0;
+		for (let ii = 0; ii < this.N ; ii++){
+			norm += this.p[ii];
+			
+		}
+		
+		
+		if (this.run == 1)
+			this.time += 1e-30*this.timeAdd;
+			
     }
 	
     setup() {
 
-		this.update();
+		
 		this.getSolutions();
-			
+		this.update();
 	
 
 	
@@ -233,6 +297,7 @@ class Simulation {
 
 class RenderIt{
 	constructor(N) {
+		this.needsRescale = 0;
 		this.mouseDown = 0;
 		this.clicked = 0;
 		this.raycaster = null;
@@ -261,6 +326,10 @@ class RenderIt{
 		this.move = 0;
 		this.needsUpdate = 0;
 		this.n = 0;
+		this.currentHover = -1;
+		this.currentHover2 = -1;
+		this.lineE = null;
+		this.lineTabE =  new Float32Array(2 * 3);
 		this.lineWell = null;
 		this.lineWellU1 = null;
 		this.lineWellL1 = null;
@@ -282,9 +351,10 @@ class RenderIt{
 		this.lineWellU3Tab = new Float32Array(2 * 3);
 		this.overview = 0;
 		
+		this.drawEnergies = 1;
 		this.scaleProb = 200000;
 		this.scaleWave = 500000;
-		this.alreadyChecked == 0;
+		this.alreadyChecked = 0;
 		this.sim = new Simulation(this.N);
 		this.ratio = this.N / this.width;
 		this.drawing = [1,0,0];
@@ -294,9 +364,13 @@ class RenderIt{
 		this.theDiv = null;
 		this.desktop = 0;
 		this.gridSize = 2000;
+		this.linesETabs = new Array(this.sim.levels);
+		this.linesE = new Array(this.sim.levels);
 		for(let i=0;i<this.numberOfDisplayedStates; i++){
 			this.circles[i] = new Float32Array(this.N * this.segmentCount);
 		}
+		
+	
 
     }
 	
@@ -319,6 +393,13 @@ class RenderIt{
 		this.lineWellL2.geometry.boundingBox = null;
 		this.lineWellR2.geometry.boundingSphere = null;
 		this.lineWellR2.geometry.boundingBox = null;
+		for(let i=0;i<abc.sim.levels; i++){
+
+			this.linesE[i].geometry.boundingSphere = null;
+			this.linesE[i].geometry.boundingBox = null;
+		}
+
+		
 		
 	}
 	
@@ -354,14 +435,14 @@ class RenderIt{
 		let minP = Math.abs(Math.min.apply(Math,this.sim.p));
 		let minR = Math.abs(Math.min.apply(Math,this.sim.re));
 		let minI = Math.abs(Math.min.apply(Math,this.sim.im));
-		console.log(" min1: " + minR + " min2: " + minI + " max1: " + maxR + " max2: " + maxI);
+		//console.log(" min1: " + minR + " min2: " + minI + " max1: " + maxR + " max2: " + maxI);
 		let mP = maxP;
 		let mR = maxR > minR ? maxR : minR;
 		let mI = maxI > minI ? maxI : minI;
-		console.log(" maxR: " + mR + " maxI: " + mI);
+		//console.log(" maxR: " + mR + " maxI: " + mI);
 		let maxHeight = this.height-this.move;
 		let waveMax = mR > mI ? mR : mI;
-		console.log(" maxWave: " + waveMax);
+		//console.log(" maxWave: " + waveMax);
 		let scaleProb =  (0.5 * maxHeight / mP);
 		this.scaleWave = (0.4*maxHeight/waveMax);
 		this.scaleProb = scaleProb;
@@ -442,7 +523,14 @@ class RenderIt{
 
 		this.lineDe = new THREE.Line( geometryDe, materialDe );
 
-
+		for(let i=0;i<this.sim.levels; i++){
+			let materialE = new THREE.LineBasicMaterial({ color: 0xff0f, linewidth: 2 });
+			this.linesETabs[i] = new Float32Array(6);
+			let geometriesE = new THREE.BufferGeometry();
+			geometriesE.addAttribute('position', new THREE.BufferAttribute(this.linesETabs[i], 3));
+			this.linesE[i] = new THREE.Line( geometriesE, materialE );
+			this.scene.add(this.linesE[i]);
+		}
 
 
 		this.gridHelper = new THREE.GridHelper( this.gridSize, 12, new THREE.Color(0xd4d4d6), new THREE.Color(0xd4d4d6) );
@@ -460,7 +548,7 @@ class RenderIt{
 		this.scene.add(this.lineIm);
 		this.scene.add(this.lineDe);
 		
-		
+		this.rescale();
 		this.addWellLines();
 		this.addArrows();	
 		this.updateSliders();
@@ -470,6 +558,7 @@ class RenderIt{
 	addWellLines(){
 		
 		let materialWell = new THREE.LineBasicMaterial({ color: 0x0, linewidth: 2 });
+		let materialE = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 2 });
 		
 		// 3 top lines
 		
@@ -512,6 +601,10 @@ class RenderIt{
 		geometryR2.addAttribute('position', new THREE.BufferAttribute(this.lineWellR2Tab, 3));
 		this.lineWellR2 = new THREE.Line( geometryR2, materialWell );
 		
+		let geometryE = new THREE.BufferGeometry();
+		geometryE.addAttribute('position', new THREE.BufferAttribute(this.lineTabE, 3));
+		this.lineE = new THREE.Line( geometryE, materialE );		
+		this.scene.add(this.lineE);
 		this.scene.add(this.lineWellR2);
 		this.scene.add(this.lineWellR1);	
 		this.scene.add(this.lineWellL2);
@@ -538,11 +631,11 @@ class RenderIt{
 			$('html,body').css('cursor', 'pointer');
 			
 			if(this.mouseDown ){
-				 // height = 2e23 * this.U  *eV2J
-				//console.log(2e23 * this.sim.U  *this.sim.ecoul);
+				 // height = 3e23 * this.U  *eV2J
+				//console.log(3e23 * this.sim.U  *this.sim.ecoul);
 				//console.log(mouse.y * this.height);
 				//console.log(this.clicked);
-				let value = mouse.y * (this.height) / (2e23*this.sim.ecoul);
+				let value = mouse.y * (this.height-2*this.offset) / (3e23*this.sim.ecoul);
 				this.sim.U = value > -10 ? value : 0;
 				this.sim.updatePotential();
 				this.clicked = 1;
@@ -561,7 +654,7 @@ class RenderIt{
 			let mouse = new THREE.Vector2();
 			mouse.x = (this.mouse.x +1) / 2;
 			mouse.y = (this.mouse.y +1) / 2;
-			console.log(Math.abs(mouse.x*this.width  * (this.ratio) - parseInt(3*this.sim.N / 10)));
+			//console.log(Math.abs(mouse.x*this.width  * (this.ratio) - parseInt(3*this.sim.N / 10)));
 			if(this.mouseDown ){
 				let val = Math.abs(mouse.x*this.width  * (this.ratio) - parseInt(3*this.sim.N / 10)) * 2;
 				this.sim.a = val > 5 ? val : 5;
@@ -593,17 +686,36 @@ class RenderIt{
 				
 			}
 		}
-	
+		
+		
+		intersects = this.raycaster.intersectObjects(this.linesE, true);
+		if (intersects.length > 0) {
+			let index = this.linesE.indexOf(intersects[ 0 ].object);
+			$('html,body').css('cursor', 'pointer');
+			this.currentHover2 = index;
+			if(this.mouseDown == 1 && this.alreadyChecked == 0){
+				this.alreadyChecked = 1;
+				
+				
+				this.linesE[index].material.color = new THREE.Color( 0xf4c542 );         
+				this.linesE[index].material.needsUpdate = true;
+				this.sim.enabled[index] = this.sim.enabled[index] == 1 ? 0 : 1;
+				psiArr[index].checked = this.sim.enabled[index] == 1 ? 1 : 0;
+			}
+		} else {
+			this.currentHover2 = -1;
+		}
 	
 		if(this.clicked == 0 && this.needsUpdate == 1){
 			this.sim.getSolutions();
 			this.needsUpdate = 0;
+			this.rescale();
 			this.updateElements();
 		}
 			
 	}
 	updateSliders(){
-		let levels = abc.sim.currentMaxLevel < 10 ? abc.sim.currentMaxLevel : 10;
+		let levels = abc.sim.currentMaxLevel < 50 ? abc.sim.currentMaxLevel : 50;
 		let newNode = document.createElement('table');
 		document.getElementById("psi_n_levels").innerHTML = "";
 		newNode.innerHTML += "<table style='psi_levels'><tr><th>Poziom</th><th>Faza</th> <th>Amplituda</th></tr>"
@@ -611,27 +723,27 @@ class RenderIt{
 		for(let i=0; i < levels; i++){
 
 			let txt = (i + 1);
-			if((i + 1)<10){
+			if((i + 1)<50){
 				txt = ' ' + (i + 1);
-			}
-			newNode.innerHTML += '<tr><td><input id="n' + (i + 1) + '" type="checkbox" name="density" value="density" checked />' + txt + ' </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
+			}//
+			newNode.innerHTML += '<tr><td><label class="control control-checkbox"><input id="n' + (i + 1) + '" type="checkbox" checked="checked" /><div id="nhover' + (i + 1) + '" class="control_indicator"></div></label>. </td><td><input type="range" min="0" max="360" value="0" step="1" id="slider_phase' + (i+1) + '" class="sim_slider_inline sim_slider" /></td><td><input type="range" min="0" max="1.414" value="1.414" step="0.00001" id="slider_amp' + (i+1) + '" class="sim_slider_inline sim_slider" /></td> </tr>';
 	
 		}
 		newNode.innerHTML += "</table>"
 		document.getElementById("psi_n_levels").appendChild( newNode );
-		var psiArr = new Array(levels);
-		var psiPhase = new Array(levels);
-		var psiAmp = new Array(levels);
+		psiArr = new Array(levels);
+		psiPhase = new Array(levels);
+		psiAmp = new Array(levels);
 		for(let i=0; i < levels; i++){
 			
 			psiArr[i] =  document.getElementById('n' + (i+1));
 			psiAmp[i] =  document.getElementById('slider_amp' + (i+1));
 			
 			psiPhase[i] =  document.getElementById('slider_phase' + (i+1));
-			if(i != 0)
-				psiArr[i].checked = false;
-			else
+			if(this.sim.enabled[i] == 1)
 				psiArr[i].checked = true;
+			else
+				psiArr[i].checked = false;
 			
 			psiArr[i].addEventListener( "change", 
 			function(ii){
@@ -639,14 +751,25 @@ class RenderIt{
 				abc.rescale();
 				if (this.checked) {
 					abc.sim.enabled[i] = 1;
-					
+					abc.needsRescale = 1;
 
 				}else{
 					abc.sim.enabled[i] = 0;
-					
+					abc.needsRescale = 1;
 				}
 				
 			});
+			
+			$("#nhover" + (i+1)).on("mouseover",function(){
+		
+				abc.currentHover = i;
+			});
+
+			$("#nhover" + (i+1)).on("mouseout",function(){
+	
+				abc.currentHover = -1;
+			});
+			
 			
 			psiPhase[i].addEventListener("input", function(e) {
 				var target = (e.target) ? e.target : e.srcElement;
@@ -668,7 +791,7 @@ class RenderIt{
 	
 	addArrows(){
 		
-		console.log((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2);
+		//console.log((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2);
 		
 		this.arrow1 = new TwoSideArrow(new THREE.Vector2((this.lineWellU1Tab[0] + this.lineWellU1Tab[3])/2, 100));
 		this.scene.add( this.arrow1.sprite );
@@ -686,27 +809,27 @@ class RenderIt{
 	
 	updateArrows(){
 		this.arrow1.sprite.position.x = (this.lineWellU3Tab[0] + this.lineWellU3Tab[3])/2;
-		this.arrow1.sprite.position.y = -this.height/2 + this.offset+ 2e23*this.sim.V[0];
+		this.arrow1.sprite.position.y = -this.height/2 + this.offset+ 3e23*this.sim.V[0];
 		
 		
 		this.arrow2.sprite.position.x = this.lineWellR2Tab[3];
-		this.arrow2.sprite.position.y = (-this.height + this.offset+ 2e23*this.sim.V[0] )/2;
+		this.arrow2.sprite.position.y = (-this.height + this.offset+ 3e23*this.sim.V[0] )/2;
 	}
 	
 	updateWellLines(){
 		this.lineWellU1Tab[0] = -this.width/2; // 
-		this.lineWellU1Tab[1] = -this.height/2 + this.offset + 2e23*this.sim.V[0];
+		this.lineWellU1Tab[1] = -this.height/2 + this.offset + 3e23*this.sim.V[0];
 		this.lineWellU1Tab[2] = 0;
 		let i = (parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
 		
 		
 		this.lineWellU1Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellU1Tab[4] = -this.height/2 + this.offset+ 2e23*this.sim.V[0];
+		this.lineWellU1Tab[4] = -this.height/2 + this.offset+ 3e23*this.sim.V[0];
 		this.lineWellU1Tab[5] = 0;
 		
 		this.lineWellL1Tab[0] = (-this.width/2+i/(this.ratio));
-		this.lineWellL1Tab[1] = -this.height/2 + this.offset+ 2e23*this.sim.V[0];
+		this.lineWellL1Tab[1] = -this.height/2 + this.offset+ 3e23*this.sim.V[0];
 		this.lineWellL1Tab[2] = 0;
 		
 		this.lineWellL1Tab[3] =(-this.width/2+i/(this.ratio));
@@ -731,7 +854,7 @@ class RenderIt{
 		
 		this.lineWellR1Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellR1Tab[4] = -this.height/2+2e23*this.sim.V[0]+ this.offset;
+		this.lineWellR1Tab[4] = -this.height/2+3e23*this.sim.V[0]+ this.offset;
 		this.lineWellR1Tab[5] = 0;
 		
 		
@@ -739,13 +862,13 @@ class RenderIt{
 		
 		i = (parseInt(3*this.N / 10) + parseInt(this.sim.a / 2));
 		this.lineWellU2Tab[0] = (-this.width/2+i/(this.ratio));
-		this.lineWellU2Tab[1] = -this.height/2+ 2e23*this.sim.V[0]+ this.offset;
+		this.lineWellU2Tab[1] = -this.height/2+ 3e23*this.sim.V[0]+ this.offset;
 		this.lineWellU2Tab[2] = 0;
 		
 		i = (parseInt(7*this.N / 10) - parseInt(this.sim.a / 2));
 		this.lineWellU2Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellU2Tab[4] = -this.height/2+2e23*this.sim.V[0]+ this.offset;
+		this.lineWellU2Tab[4] = -this.height/2+3e23*this.sim.V[0]+ this.offset;
 		this.lineWellU2Tab[5] = 0;
 		
 		
@@ -755,7 +878,7 @@ class RenderIt{
 		
 		this.lineWellL2Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellL2Tab[4] = -this.height/2 + 2e23*this.sim.V[0]+ this.offset;
+		this.lineWellL2Tab[4] = -this.height/2 + 3e23*this.sim.V[0]+ this.offset;
 		this.lineWellL2Tab[5] = 0;
 		
 		
@@ -776,20 +899,25 @@ class RenderIt{
 		
 		this.lineWellR2Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellR2Tab[4] = -this.height/2 + 2e23*this.sim.V[0] + this.offset;
+		this.lineWellR2Tab[4] = -this.height/2 + 3e23*this.sim.V[0] + this.offset;
 		this.lineWellR2Tab[5] = 0;
 		
 		
 		i = (parseInt(7*this.N / 10) + parseInt(this.sim.a / 2));
 		this.lineWellU3Tab[0] = (-this.width/2+i/(this.ratio));
-		this.lineWellU3Tab[1] = -this.height/2 + 2e23*this.sim.V[0]+ this.offset;
+		this.lineWellU3Tab[1] = -this.height/2 + 3e23*this.sim.V[0]+ this.offset;
 		this.lineWellU3Tab[2] = 0;
 		
 		i = parseInt(10*this.N / 10);
 		this.lineWellU3Tab[3] =(-this.width/2+i/(this.ratio));
 		//console.log(parseInt(3*this.N / 10) - parseInt(this.sim.a / 2));
-		this.lineWellU3Tab[4] = -this.height/2 + 2e23*this.sim.V[0]+ this.offset;
+		this.lineWellU3Tab[4] = -this.height/2 + 3e23*this.sim.V[0]+ this.offset;
 		this.lineWellU3Tab[5] = 0;
+		
+				
+		
+		
+		
 		this.updateArrows();
 	}
 	
@@ -805,41 +933,113 @@ class RenderIt{
 	updatePositions(){
 		//console.log(this.sim.V);
 		this.sim.update();
+		if(this.needsRescale){
+			this.needsRescale = 0;
+			this.rescale();
+		}
+		
+		if(this.currentHover < 0 && this.currentHover2 < 0){
 	//for(let j =0; j< this.sim.currentMaxLevel){
 			for(let i=0;i<3 *( this.N); i+=3){
 				this.positions[ i ] = (-this.width/2+i/(this.ratio*3))
 				//console.log(this.scaleWave*this.sim.re[i/3]);
-				this.positions[ i+1 ] = 2e23*this.sim.V[i/3]+ this.offset;
+				this.positions[ i+1 ] = 3e23*this.sim.V[i/3]+ this.offset;
 				this.positions[ i+2 ] = 0;
-				let val = 1e3*this.sim.eigM.V[i/3][this.n]*Math.cos(this.sim.time * this.sim.eigM.d[this.n]/ this.sim.hbar);
+				
 				this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
 				//console.log(this.scaleWave*this.sim.re[i/3]);
-				this.positionsRe[ i+1 ] = val;
+				this.positionsRe[ i+1 ] = this.scaleWave*this.sim.re[i/3];
 				this.positionsRe[ i+2 ] = 0;
 				
-				this.positionsDe[ i+1 ] = -this.height/2 + this.offset + 0.002*val*val;
-				
-				
-				val = 1e3*this.sim.eigM.V[i/3][this.n]*Math.sin(this.sim.time * this.sim.eigM.d[this.n]/ this.sim.hbar);
+
 				this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
 				//console.log(this.scaleWave*this.sim.re[i/3]);
-				this.positionsIm[ i+1 ] = val+ this.offset;
+				this.positionsIm[ i+1 ] = this.scaleWave*this.sim.im[i/3]+ this.offset;
 				this.positionsIm[ i+2 ] = 0;
 				
 				this.positionsDe[ i ] = (-this.width/2+i/(this.ratio*3))
 				//console.log(this.scaleWave*this.sim.re[i/3]);
-				this.positionsDe[ i+1 ] += 0.002*val*val;
+				this.positionsDe[ i+1 ] = -this.height/2 + this.offset + 1e3*1e3* 0.006*this.sim.p[i/3];
 				this.positionsDe[ i+2 ] = 0;
 
 				
 			}
 			
-			if (abc.sim.run == 1)
-				this.sim.time += 1e-18;
+			for(let i=0;i<this.sim.levels; i++){
+				if(this.sim.enabled[i]){
+					this.linesE[i].material.color = new THREE.Color( 0xff844b );    
+				}else{
+					this.linesE[i].material.color = new THREE.Color( 0xaf0f );    
+				
+				}
+				this.linesE[i].material.needsUpdate = true;
+				let ene =  3e23*this.sim.energies[i];
+				if(this.drawEnergies == 0 || i > this.sim.currentMaxLevel){
+					ene = -100000;
+				}
+				this.linesETabs[i][0] = -this.width/2;
+				this.linesETabs[i][1] =this.offset-this.height/2 + ene;
+				this.linesETabs[i][2] = 0;
+				
+				this.linesETabs[i][3] = +this.width/2;
+				this.linesETabs[i][4] =this.offset-this.height/2 + ene;
+				this.linesETabs[i][5] = 0;
 			
-			this.updateWellLines();
+			}
+	}else{
+		
+		let hover  = this.currentHover > -1 ? this.currentHover : this.currentHover2;
+		let vec = this.rescaleTmp(hover);
+
+			for(let i=0;i<3 *( this.N+1); i+=3){
+				this.positionsRe[ i ] = (-this.width/2+i/(this.ratio*3))
+				//console.log(this.scaleWave*this.sim.re[i/3]);
+				this.positionsRe[ i+1 ] = vec.y*this.sim.reArray[hover][i/3];
+				this.positionsRe[ i+2 ] = 0;
+
+				this.positionsDe[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsDe[ i+1 ] =  this.offset -this.height/2 + this.move+ vec.x*this.sim.pArray[hover][i/3];
+				this.positionsDe[ i+2 ] = 0;
 			
-					
+				this.positionsIm[ i ] = (-this.width/2+i/(this.ratio*3))
+				this.positionsIm[ i+1 ] =  (vec.y*this.sim.imArray[hover][i/3]);
+				this.positionsIm[ i+2 ] = 0;
+				
+		
+			}
+			this.linesE[hover].material.color = new THREE.Color( 0xf4c542 );         
+			this.linesE[hover].material.needsUpdate = true;
+			this.linesETabs[hover][1] =this.offset-this.height/2 +  3e23*this.sim.energies[hover];
+			this.linesETabs[hover][4] =this.offset-this.height/2 +  3e23*this.sim.energies[hover];
+
+			
+		}
+		this.updateWellLines();
+			
+			
+			
+		}
+		
+		rescaleTmp(index){
+			let maxP = Math.max.apply(Math,this.sim.pArray[index]);
+			let maxR = Math.max.apply(Math,this.sim.reArray[index]);
+			let maxI = Math.max.apply(Math,this.sim.imArray[index]);
+			
+			let maxHeight = this.height-this.move;
+			
+			let scaleWave1 = Math.abs(0.4 * maxHeight / maxR);
+			let scaleWave2 =  Math.abs(0.4 * maxHeight / maxI);
+			
+			let scaleProb =  Math.abs(0.5 * maxHeight / maxP);
+			var vec = new THREE.Vector2();
+			vec.x = scaleProb;
+			if(scaleWave1 < scaleWave2)
+				vec.y = scaleWave1;
+			else
+				vec.y = scaleWave2;
+			
+			return vec;
+		
 		}
 //	}
 	
@@ -869,15 +1069,19 @@ var abc = new RenderIt(300);
 abc.init();
 
 var running = document.getElementById("running");
+running.checked = true;
 var clearer = document.getElementById("clearer");
 var rescale = document.getElementById("rescale");
 var chRe = document.getElementById("chRe");
+var chMod = document.getElementById("chMod");
+var energies = document.getElementById("energies");
 var chGrid = document.getElementById("chGrid");
 var sldierTime = document.getElementById("slider_time");
 var sliderA = document.getElementById("slider_a");
 var sliderU = document.getElementById("slider_U");
-var slidern = document.getElementById("slider_n");
 
+chMod.checked = false;
+chRe.checked = true;
 running.addEventListener( "change", 
 
 	function(){
@@ -894,10 +1098,11 @@ clearer.addEventListener( "click",
 		for(let ii = 0; ii< abc.sim.levels; ii++){
 			if(ii == 0){
 				psiArr[ii].checked = true;
+				abc.sim.enabled[ii] = 1;
 				
 			}else{
 				psiArr[ii].checked = false;
-				
+				abc.sim.enabled[ii] = 0;
 			}
 		}
 		abc.sim.time = 0;
@@ -922,17 +1127,6 @@ sliderA.addEventListener("change", function(e) {
 	var target = (e.target) ? e.target : e.srcElement;
 	abc.sim.a = parseFloat(target.value);
 	abc.updateElements();
-	//abc.rescale();
-	//abc.resizeGrid();
-	abc.sim.time = 0;
-	
-});
-
-slidern.addEventListener("input", function(e) {
-	var target = (e.target) ? e.target : e.srcElement;
-	abc.n = parseInt(target.value) <= abc.sim.currentMaxLevel? parseInt(target.value) :  abc.sim.currentMaxLevel;
-	console.log("x");
-	//abc.sim.getSolutions();
 	//abc.rescale();
 	//abc.resizeGrid();
 	abc.sim.time = 0;
@@ -968,20 +1162,42 @@ function(){
 	}
 });
 
+energies.checked = true;
+energies.addEventListener( "change", 
+function(){
+	if (this.checked) {
+		abc.drawEnergies = 1;
+	}else{
+		abc.drawEnergies = 0;
+	}
+});
+
+
 chRe.addEventListener( "change", 
 function(){
 	if (this.checked) {
-		abc.drawing[1] = 1;
-		abc.drawing[0] = 0;
-		//chDe.checked = false;
-		abc.gridDraw = [0,1];
-	}else{
-		abc.drawing[1] = 0;
 		abc.drawing[0] = 1;
+		//chDe.checked = false;
+				abc.gridDraw = [0,1];
+	}else{
+		abc.drawing[0] = 0;
 		//chDe.checked = true;
 		abc.gridDraw = [1,0];
 	}
 });
+chMod.addEventListener( "change", 
+function(){
+	if (this.checked) {
+	
+		abc.drawing[1] = 1;
+		
+		abc.gridDraw = [1,0];
+	}else{
+		abc.drawing[1] = 0;
+		abc.gridDraw = [0,1];
+	}
+});
+
 abc.renderer.domElement.addEventListener('touchstart', function(e){
 	e.preventDefault()
       abc.mouseDown = 1;
@@ -1009,7 +1225,6 @@ abc.renderer.domElement.addEventListener('touchend', function(event){
 	abc.mouseDown = 0;
 	abc.alreadyChecked = 0;
 }, false);
-chRe.checked = false;
 abc.renderer.domElement.addEventListener('mousedown', function(event){
 	event.preventDefault();
 	abc.mouseDown = 1;
@@ -1048,21 +1263,8 @@ chGrid.checked = true;
 this.animate = function() {
 			requestAnimationFrame(animate);
 			abc.updatePositions();
-			//abc.line.geometry.attributes.position.needsUpdate = true;
-			abc.lineRe.geometry.attributes.position.needsUpdate = true;
-			abc.lineIm.geometry.attributes.position.needsUpdate = true;
-			abc.lineDe.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellD1.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellD2.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellL1.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellL2.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellR1.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellR2.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellU1.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellU2.geometry.attributes.position.needsUpdate = true;
-			abc.lineWellU3.geometry.attributes.position.needsUpdate = true;
+		
 			
-			abc.lineWellU1.geometry.attributes.position.needsUpdate = true;
 			
 			abc.intersectWithWell();
 			if(abc.drawing[0] == 1){
@@ -1097,7 +1299,25 @@ this.animate = function() {
 				abc.gridHelper.visible = false;
 				abc.gridHelper2.visible = false;
 			}
-			
+				//abc.line.geometry.attributes.position.needsUpdate = true;
+			abc.lineRe.geometry.attributes.position.needsUpdate = true;
+			abc.lineIm.geometry.attributes.position.needsUpdate = true;
+			abc.lineDe.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellD1.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellD2.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellL1.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellL2.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellR1.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellR2.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellU1.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellU2.geometry.attributes.position.needsUpdate = true;
+			abc.lineWellU3.geometry.attributes.position.needsUpdate = true;
+			for(let i=0;i<abc.sim.levels; i++){
+				abc.linesE[i].geometry.attributes.position.needsUpdate = true;
+				abc.linesE[i].material.needsUpdate = true;
+				
+			}
+			abc.lineWellU1.geometry.attributes.position.needsUpdate = true;
 			abc.renderer.render(abc.scene, abc.camera);
 }
 
